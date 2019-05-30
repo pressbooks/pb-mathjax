@@ -18,9 +18,39 @@ router.get('/', (req, res, next) => {
   // --------------------------------------------------------------------------
   // Sanitize Params
   // --------------------------------------------------------------------------
+  let pngOptions = {}
 
-  myScale = Math.min(myScale * 10, 100);
-  if (isNaN(myScale) || myScale < 10) myScale = 10;
+  // Leaving the old forumla here
+  // myScale = Math.min(myScale * 10, 100);
+  // if (isNaN(myScale) || myScale < 10) myScale = 10;
+  // if(myScale == 1){ myScale = 30};
+
+  // Make MathJax scale relative to WP LaTex
+  if(myScale == 0){
+    myScale = 1 * 12;
+  }else{ 
+    myScale = myScale * 12;
+  }  
+
+  // If background is 'T', remove background parameter 
+  // to make background transparent
+  if (myBackground == "T"){
+    pngOptions = {
+        scale: myScale,
+    }
+  }else{
+    pngOptions = {
+      background: "#" + myBackground,
+      scale: myScale
+    }
+  }
+
+  // Check to see if svg
+  if(isSvg == 1){
+    isSvg = true;
+  }else {
+    isSvg = false;
+  }
 
   // --------------------------------------------------------------------------
   // Convert LaTeX into an image
@@ -52,14 +82,10 @@ router.get('/', (req, res, next) => {
       res.send(data.svg);
     } else {
       // PNG
-      convert(data.svg, {
-        background: myBackground,
-        scale: myScale,
-      }).then((png) => {
+      convert(data.svg, pngOptions).then((png) => {
         res.set('Content-Type', 'image/png');
         res.send(png);
       }).catch((error) => {
-        console.log(['happening 1!', error]);
         next(error);
       });
     }
