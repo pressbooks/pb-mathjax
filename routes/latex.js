@@ -28,11 +28,11 @@ router.get('/', (req, res, next) => {
   // Make MathJax scale relative to WP LaTex
   if(myScale == 0){
     myScale = 1 * 12;
-  }else{ 
+  }else{
     myScale = myScale * 12;
-  }  
+  }
 
-  // If background is 'T', remove background parameter 
+  // If background is 'T', remove background parameter
   // to make background transparent
   if (myBackground == "T"){
     pngOptions = {
@@ -76,13 +76,20 @@ router.get('/', (req, res, next) => {
     svg: true,
     speakText: true, // a11y
   }).then((data) => {
+
+    // Colors
+    let svg = data.svg;
+    svg = svg.replace(/<title/, `<style>svg { background-color: #${myBackground}; }</style><title`);
+    svg = svg.replace(/stroke="currentColor"/g, `stroke="#${myForeground}"`);
+    svg = svg.replace(/fill="currentColor"/g, `fill="#${myForeground}"`);
+
     if (isSvg) {
       // SVG
       res.set('Content-Type', 'image/svg+xml');
-      res.send(data.svg);
+      res.send(svg);
     } else {
       // PNG
-      convert(data.svg, pngOptions).then((png) => {
+      convert(svg, pngOptions).then((png) => {
         res.set('Content-Type', 'image/png');
         res.send(png);
       }).catch((error) => {
