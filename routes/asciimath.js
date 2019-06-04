@@ -1,7 +1,7 @@
 "use strict";
 
 const mjAPI = require('mathjax-node');
-const {convert} = require('convert-svg-to-png');
+const sharp = require('sharp')
 const express = require('express');
 const router = express.Router();
 
@@ -35,25 +35,6 @@ router.get('/', (req, res, next) => {
 
   // color
   myForeground = isValidColor(`#${myForeground}`) ? `#${myForeground}` : '#000000';
-
-  // Make MathJax scale relative to WP LaTex
-  const wpScaleMap = {
-    1: 6.75,
-    2: 13.47,
-    3: 20.22,
-    4: 26.95,
-    5: 33.68,
-    6: 40.45,
-    7: 47.14,
-    8: 53.88,
-    9: 60.4,
-  };
-  myScale = Number(myScale);
-  if (wpScaleMap[myScale]) {
-    myScale = wpScaleMap[myScale];
-  } else {
-    myScale = 6.75;
-  }
 
   //  TODO
   myFontSize = 'medium';
@@ -95,10 +76,10 @@ router.get('/', (req, res, next) => {
       res.send(svg);
     } else {
       // PNG
-      convert(svg, {
-        scale: myScale,
-        puppeteer: {args: ['--no-sandbox', '--disable-setuid-sandbox']},
-      }).then((png) => {
+      sharp(Buffer.from(svg), { density: 300 })
+      .png()
+      .toBuffer()
+      .then((png) => {
         res.set('Content-Type', 'image/png');
         res.send(png);
       }).catch((error) => {

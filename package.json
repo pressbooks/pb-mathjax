@@ -7,13 +7,13 @@
     "test": "mocha --exit"
   },
   "dependencies": {
-    "convert-svg-to-png": "^0.5.0",
     "cookie-parser": "~1.4.4",
     "debug": "~2.6.9",
     "express": "~4.16.1",
     "http-errors": "~1.6.3",
     "mathjax-node": "^2.1.1",
     "morgan": "~1.9.1",
+    "sharp": "^0.22.1",
     "twig": "~0.10.3"
   },
   "devDependencies": {
