@@ -89,7 +89,10 @@ router.get('/', (req, res, next) => {
       res.send(svg);
     } else {
       // PNG
-      convert(svg, {scale: myScale}).then((png) => {
+      convert(svg, {
+        scale: myScale,
+        puppeteer: {args: ['--no-sandbox', '--disable-setuid-sandbox']},
+      }).then((png) => {
         res.set('Content-Type', 'image/png');
         res.send(png);
       }).catch((error) => {
