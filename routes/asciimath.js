@@ -35,16 +35,22 @@ router.get('/', (req, res, next) => {
   myForeground = isValidColor(`#${myForeground}`) ? `#${myForeground}` : '#000000';
 
   // Make MathJax scale relative to WP LaTex
-  if (!myScale || myScale === '0') {
-    myScale = 12;
+  const wpScaleMap = {
+    1: 6.75,
+    2: 13.47,
+    3: 20.22,
+    4: 26.95,
+    5: 33.68,
+    6: 40.45,
+    7: 47.14,
+    8: 53.88,
+    9: 60.4,
+  };
+  myScale = Number(myScale);
+  if (wpScaleMap[myScale]) {
+    myScale = wpScaleMap[myScale];
   } else {
-    myScale = myScale * 12;
-    if (myScale > 120) {
-      myScale = 120;
-    }
-    if (myScale < 12) {
-      myScale = 12;
-    }
+    myScale = 6.75;
   }
 
   //  TODO
