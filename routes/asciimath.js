@@ -33,9 +33,6 @@ router.get('/', (req, res, next) => {
   if (dpi < 72) dpi = 72; // Min
   if (dpi > 2400) dpi = 2400; // Max
 
-  console.log(dpi);
-
-
   // Check to see if SVG
   isSvg = !(!isSvg || isSvg === '0');
 
