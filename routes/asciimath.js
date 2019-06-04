@@ -1,3 +1,5 @@
+"use strict";
+
 const mjAPI = require('mathjax-node');
 const {convert} = require('convert-svg-to-png');
 const express = require('express');
@@ -76,7 +78,6 @@ router.get('/', (req, res, next) => {
       },
     },
   });
-  mjAPI.start();
 
   // Convert LaTex into an image
   mjAPI.typeset({
