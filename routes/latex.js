@@ -70,7 +70,7 @@ router.get('/', (req, res, next) => {
       res.send(svg);
     } else {
       // PNG
-      sharp(Buffer.from(svg), { density: 300 })
+      sharp(Buffer.from(svg), { density: dpi })
       .png()
       .toBuffer()
       .then((png) => {
