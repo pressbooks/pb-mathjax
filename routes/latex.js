@@ -11,33 +11,28 @@ router.get('/', (req, res, next) => {
   // Params
   // --------------------------------------------------------------------------
 
-  let myLatex = req.query.latex;
-  let myBackground = req.query.bg;
+  let myMath = req.query.latex;
   let myForeground = req.query.fg;
-  let myFontSize = req.query.s;
-  let myScale = req.query.zoom;
+  let dpi = req.query.dpi;
   let isSvg = req.query.svg;
 
   // --------------------------------------------------------------------------
   // Sanitize Params
   // --------------------------------------------------------------------------
 
+  // Font Color
   function isValidColor(str) {
     return str.match(/^#[a-f0-9]{6}$/i) !== null;
   }
-
-  // background-color
-  if (!myBackground || myBackground.toLowerCase() === 't') {
-    myBackground = 'transparent';
-  } else {
-    myBackground = isValidColor(`#${myBackground}`) ? `#${myBackground}` : 'transparent';
-  }
-
-  // color
   myForeground = isValidColor(`#${myForeground}`) ? `#${myForeground}` : '#000000';
 
-  //  TODO
-  // myFontSize = 'medium';
+  // Dpi
+  dpi = parseInt(dpi);
+  if (isNaN(dpi)) dpi = 72;
+  if (dpi < 72) dpi = 72; // Min
+  if (dpi > 2400) dpi = 2400; // Max
+
+  console.log(dpi);
 
   // Check to see if SVG
   isSvg = !(!isSvg || isSvg === '0');
@@ -47,7 +42,7 @@ router.get('/', (req, res, next) => {
   // --------------------------------------------------------------------------
 
   // Setup CSS for SVG
-  const svgCss = `background-color: ${myBackground}; color: ${myForeground}; font-size: ${myFontSize}`;
+  const svgCss = `color: ${myForeground};`;
 
   // Init Mathjax to parse LaTeX
   mjAPI.config({
@@ -63,7 +58,7 @@ router.get('/', (req, res, next) => {
 
   // Convert LaTex into an image
   mjAPI.typeset({
-    math: myLatex,
+    math: myMath,
     format: 'TeX',
     svg: true,
     speakText: true, // a11y

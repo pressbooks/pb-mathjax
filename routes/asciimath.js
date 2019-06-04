@@ -11,45 +11,42 @@ router.get('/', (req, res, next) => {
   // Params
   // --------------------------------------------------------------------------
 
-  let myAsciiMath = req.query.asciimath;
-  let myBackground = req.query.bg;
+  let myMath = req.query.asciimath;
   let myForeground = req.query.fg;
-  let myFontSize = req.query.s;
-  let myScale = req.query.zoom;
+  let dpi = req.query.dpi;
   let isSvg = req.query.svg;
+
 
   // --------------------------------------------------------------------------
   // Sanitize Params
   // --------------------------------------------------------------------------
 
+  // Font Color
   function isValidColor(str) {
     return str.match(/^#[a-f0-9]{6}$/i) !== null;
   }
-
-  // background-color
-  if (!myBackground || myBackground.toLowerCase() === 't') {
-    myBackground = 'transparent';
-  } else {
-    myBackground = isValidColor(`#${myBackground}`) ? `#${myBackground}` : 'transparent';
-  }
-
-  // color
   myForeground = isValidColor(`#${myForeground}`) ? `#${myForeground}` : '#000000';
 
-  //  TODO
-  myFontSize = 'medium';
+  // Dpi
+  dpi = parseInt(dpi);
+  if (isNaN(dpi)) dpi = 72;
+  if (dpi < 72) dpi = 72; // Min
+  if (dpi > 2400) dpi = 2400; // Max
+
+  console.log(dpi);
+
 
   // Check to see if SVG
   isSvg = !(!isSvg || isSvg === '0');
 
   // --------------------------------------------------------------------------
-  // Convert LaTeX into an image
+  // Convert AsciiMath into an image
   // --------------------------------------------------------------------------
 
   // Setup CSS for SVG
-  const svgCss = `background-color: ${myBackground}; color: ${myForeground}; font-size: ${myFontSize}`;
+  const svgCss = `color: ${myForeground};`;
 
-  // Init Mathjax to parse LaTeX
+  // Init Mathjax to parse AsciiMath
   mjAPI.config({
     MathJax: {
       displayMessages: false,
@@ -60,9 +57,9 @@ router.get('/', (req, res, next) => {
     },
   });
 
-  // Convert LaTex into an image
+  // Convert AsciiMath into an image
   mjAPI.typeset({
-    math: myAsciiMath,
+    math: myMath,
     format: 'AsciiMath',
     svg: true,
     speakText: true, // a11y
@@ -76,7 +73,7 @@ router.get('/', (req, res, next) => {
       res.send(svg);
     } else {
       // PNG
-      sharp(Buffer.from(svg), { density: 300 })
+      sharp(Buffer.from(svg), { density: dpi })
       .png()
       .toBuffer()
       .then((png) => {
