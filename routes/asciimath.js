@@ -9,7 +9,7 @@ router.get('/', (req, res, next) => {
   // Params
   // --------------------------------------------------------------------------
 
-  let myLatex = req.query.latex;
+  let myAsciiMath = req.query.asciimath;
   let myBackground = req.query.bg;
   let myForeground = req.query.fg;
   let myFontSize = req.query.s;
@@ -65,9 +65,8 @@ router.get('/', (req, res, next) => {
     MathJax: {
       displayMessages: false,
       displayErrors: false,
-      TeX: {
-        // @see http://docs.mathjax.org/en/latest/tex.html
-        extensions: ['cancel.js', 'mhchem.js'],
+      AsciiMath: {
+        // @see http://docs.mathjax.org/en/latest/asciimath.html
       },
     },
   });
@@ -75,8 +74,8 @@ router.get('/', (req, res, next) => {
 
   // Convert LaTex into an image
   mjAPI.typeset({
-    math: myLatex,
-    format: 'TeX',
+    math: myAsciiMath,
+    format: 'AsciiMath',
     svg: true,
     speakText: true, // a11y
   }).then((data) => {
