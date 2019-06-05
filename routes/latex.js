@@ -49,7 +49,7 @@ router.get('/', (req, res, next) => {
       displayErrors: false,
       TeX: {
         // @see http://docs.mathjax.org/en/latest/tex.html
-        extensions: ['cancel.js', 'mhchem.js'],
+        extensions: ['autoload-all.js'],
       },
     },
   });
