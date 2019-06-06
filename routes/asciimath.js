@@ -51,6 +51,9 @@ router.get('/', (req, res, next) => {
       AsciiMath: {
         // @see http://docs.mathjax.org/en/latest/asciimath.html
       },
+      SVG: {
+        blacker: 0,
+      },
     },
   });
 

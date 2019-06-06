@@ -51,6 +51,9 @@ router.get('/', (req, res, next) => {
         // @see http://docs.mathjax.org/en/latest/tex.html
         extensions: ['autoload-all.js'],
       },
+      SVG: {
+        blacker: 0,
+      },
     },
   });
 
