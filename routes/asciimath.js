@@ -1,7 +1,7 @@
 "use strict";
 
 const mjAPI = require('mathjax-node');
-const sharp = require('sharp')
+const sharp = require('sharp');
 const express = require('express');
 const router = express.Router();
 
@@ -46,6 +46,7 @@ router.get('/', (req, res, next) => {
   // Init Mathjax to parse AsciiMath
   mjAPI.config({
     MathJax: {
+      extensions: [ 'Safe.js' ],
       displayMessages: false,
       displayErrors: false,
       AsciiMath: {

@@ -11,10 +11,11 @@ router.get('/', (req, res, next) => {
   // Params
   // --------------------------------------------------------------------------
 
-  let myMath = req.query.latex;
+  let myMath = req.query.mathml;
   let myForeground = req.query.fg;
   let dpi = req.query.dpi;
   let isSvg = req.query.svg;
+
 
   // --------------------------------------------------------------------------
   // Sanitize Params
@@ -36,21 +37,21 @@ router.get('/', (req, res, next) => {
   isSvg = !(!isSvg || isSvg === '0');
 
   // --------------------------------------------------------------------------
-  // Convert LaTeX into an image
+  // Convert MathML into an image
   // --------------------------------------------------------------------------
 
   // Setup CSS for SVG
   const svgCss = `color: ${myForeground};`;
 
-  // Init Mathjax to parse LaTeX
+  // Init Mathjax to parse MathML
   mjAPI.config({
     MathJax: {
       extensions: [ 'Safe.js' ],
       displayMessages: false,
       displayErrors: false,
-      TeX: {
-        // @see http://docs.mathjax.org/en/latest/tex.html
-        extensions: ['autoload-all.js'],
+      MathML: {
+        // @see http://docs.mathjax.org/en/latest/mathml.html
+        extensions: [ 'content-mathml.js' ]
       },
       SVG: {
         blacker: 0,
@@ -58,16 +59,16 @@ router.get('/', (req, res, next) => {
     },
   });
 
-  // Convert LaTex into an image
+  // Convert MathML into an image
   mjAPI.typeset({
     math: myMath,
-    format: 'TeX',
+    format: 'MathML',
     svg: true,
     speakText: true, // a11y
   }).then((data) => {
     // Inject CSS
     let svg = data.svg;
-    svg = svg.replace(/<title/, `<style>/* <![CDATA[ */ svg { ${svgCss} } /* ]]> */</style><title`);
+    svg = svg.replace(/<\/title>/, `</title><style>/* <![CDATA[ */ svg { ${svgCss} } /* ]]> */</style>`);
     if (isSvg) {
       // SVG
       res.set('Content-Type', 'image/svg+xml');
