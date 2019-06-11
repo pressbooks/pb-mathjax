@@ -20,7 +20,7 @@ to call `https://s0.wp.com/latex.php`
 
 It works like this:
 
-<p><img src="https://s0.wp.com/latex.php?latex=%5Cdisplaystyle+P_%5Cnu%5E%7B-%5Cmu%7D%28z%29%3D%5Cfrac%7B%5Cleft%28z%5E2-1%5Cright%29%5E%7B%5Cfrac%7B%5Cmu%7D%7B2%7D%7D%7D%7B2%5E%5Cmu+%5Csqrt%7B%5Cpi%7D%5CGamma%5Cleft%28%5Cmu%2B%5Cfrac%7B1%7D%7B2%7D%5Cright%29%7D%5Cint_%7B-1%7D%5E1%5Cfrac%7B%5Cleft%281-t%5E2%5Cright%29%5E%7B%5Cmu+-%5Cfrac%7B1%7D%7B2%7D%7D%7D%7B%5Cleft%28z%2Bt%5Csqrt%7Bz%5E2-1%7D%5Cright%29%5E%7B%5Cmu-%5Cnu%7D%7Ddt&amp;fg=000000" ></p>
+<p><img src="https://s0.wp.com/latex.php?latex=%5Cdisplaystyle+P_%5Cnu%5E%7B-%5Cmu%7D%28z%29%3D%5Cfrac%7B%5Cleft%28z%5E2-1%5Cright%29%5E%7B%5Cfrac%7B%5Cmu%7D%7B2%7D%7D%7D%7B2%5E%5Cmu+%5Csqrt%7B%5Cpi%7D%5CGamma%5Cleft%28%5Cmu%2B%5Cfrac%7B1%7D%7B2%7D%5Cright%29%7D%5Cint_%7B-1%7D%5E1%5Cfrac%7B%5Cleft%281-t%5E2%5Cright%29%5E%7B%5Cmu+-%5Cfrac%7B1%7D%7B2%7D%7D%7D%7B%5Cleft%28z%2Bt%5Csqrt%7Bz%5E2-1%7D%5Cright%29%5E%7B%5Cmu-%5Cnu%7D%7Ddt&amp;fg=000000&bg=T" ></p>
 
 I.e.
 
@@ -32,7 +32,7 @@ src="https://s0.wp.com/latex.php?latex=%5Cdisplaystyle+P_%5Cnu%5E%7B-%5Cmu%7D%28
 
 If we squint real hard, we can break down `img src` into `$_GET` parameters:
 
-`latex.php ? latex=<LaTeX> & fg=<ForegroundColor>`
+`latex.php ? latex=<LaTeX> & fg=<ForegroundColor> & ...`
 
 Such a URL returns a PNG containing math rendered by LaTeX.
 
