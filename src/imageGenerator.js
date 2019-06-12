@@ -33,47 +33,50 @@ module.exports.generate = (configs, req, res, next) => {
   // Check to see if SVG
   isSvg = !(!isSvg || isSvg === '0');
 
+  // Setup CSS for SVG
+  const svgCss = `color: ${myForeground};`;
+
   // --------------------------------------------------------------------------
   // Convert math into an image
   // --------------------------------------------------------------------------
 
   // Error image, just in case
-  const formulaDoesNotParse = path.resolve('public/images/formula_does_not_parse.png');
-
-  // Setup CSS for SVG
-  const svgCss = `color: ${myForeground};`;
-
-  // Init Mathjax
-  mjAPI.config(configs.mathjax);
-
-  // Convert
-  mjAPI.typeset(configs.typeset).then((data) => {
-    if (data.width === '0') {
-      throw new Error('Width equals 0, broken SVG');
-    }
-    // Inject CSS
-    let svg = data.svg;
-    svg = svg.replace(/<title/, `<style>/* <![CDATA[ */ svg { ${svgCss} } /* ]]> */</style><title`);
-    if (isSvg) {
-      // SVG
-      return res.set('Content-Type', 'image/svg+xml').send(svg);
-    } else {
-      // PNG
-      sharp(Buffer.from(svg), { density: dpi })
-      .png()
-      .toBuffer()
-      .then((png) => {
-        return res.set('Content-Type', 'image/png').send(png);
-      }).catch((error) => {
-        console.error('There was a problem with Sharp:');
-        console.error(error);
-        return res.status(500).sendFile(formulaDoesNotParse);
-      });
-    }
-  }).catch((error) => {
+  function formulaDoesNotParse(err) {
+    const img = path.resolve('public/images/formula_does_not_parse.png');
     console.error('There was a problem with MathJax:');
-    console.error(error);
-    return res.status(500).sendFile(formulaDoesNotParse);
-  });
+    console.error(err);
+    res.set('pb-mathjax-error', 'Formula does not parse');
+    return res.sendFile(img);
+  }
+
+  try {
+    mjAPI.config(configs.mathjax);
+    mjAPI.typeset(configs.typeset).then((data) => {
+      if (data.width === '0') {
+        throw new Error('Width equals 0, broken SVG');
+      }
+      // Inject CSS
+      let svg = data.svg;
+      svg = svg.replace(/<title/,
+          `<style>/* <![CDATA[ */ svg { ${svgCss} } /* ]]> */</style><title`);
+      if (isSvg) {
+        // SVG
+        res.set('Content-Type', 'image/svg+xml');
+        return res.send(svg);
+      } else {
+        // PNG
+        sharp(Buffer.from(svg), {density: dpi}).png().toBuffer().then((png) => {
+          res.set('Content-Type', 'image/png');
+          return res.send(png);
+        }).catch((err) => {
+          return formulaDoesNotParse(err);
+        });
+      }
+    }).catch((err) => {
+      return formulaDoesNotParse(err);
+    });
+  } catch (err) {
+    return formulaDoesNotParse(err);
+  }
 
 };

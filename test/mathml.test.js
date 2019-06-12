@@ -31,9 +31,10 @@ describe('Testing the /mathml route', function() {
 
   it('Bad MathML should return error status', function() {
     return request(app).
-        get('/mathml?mathml=%3Cmath%3E%3Cmsup%3E%3Cmi%3Ee').
+        get('/mathml?mathml=%3Cmath%3E%3Cmsup%3E%3Cmi%3Ee&svg=1').
         then(function(response) {
-          assert.equal(response.status, 500);
+          expect(response.type).to.contain('image/png');
+          expect(response.get('pb-mathjax-error')).to.equal('Formula does not parse');
         });
   });
 

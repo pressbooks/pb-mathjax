@@ -31,9 +31,10 @@ describe('Testing the /latex route', function() {
 
   it('Bad LaTex should return error status', function() {
     return request(app).
-        get('/latex?latex=%5CLaTeX%26s%3DX').
+        get('/latex?latex=%5CLaTeX%26s%3DX&svg=1').
         then(function(response) {
-          assert.equal(response.status, 500);
+          expect(response.type).to.contain('image/png');
+          expect(response.get('pb-mathjax-error')).to.equal('Formula does not parse');
         });
   });
 
