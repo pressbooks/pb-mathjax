@@ -42,11 +42,9 @@ module.exports.generate = (configs, req, res, next) => {
 
   // Error image, just in case
   function formulaDoesNotParse(err) {
-    const img = path.resolve('public/images/formula_does_not_parse.png');
-    console.error('There was a problem with MathJax:');
     console.error(err);
     res.set('pb-mathjax-error', 'Formula does not parse');
-    return res.sendFile(img);
+    return res.sendFile(path.resolve('public/images/formula_does_not_parse.png'));
   }
 
   try {
@@ -69,13 +67,16 @@ module.exports.generate = (configs, req, res, next) => {
           res.set('Content-Type', 'image/png');
           return res.send(png);
         }).catch((err) => {
+          console.error('There was a problem with Sharp:');
           return formulaDoesNotParse(err);
         });
       }
     }).catch((err) => {
+      console.error('There was a problem with MathJax.Typeset:');
       return formulaDoesNotParse(err);
     });
   } catch (err) {
+    console.error('There was a problem with MathJax:');
     return formulaDoesNotParse(err);
   }
 
