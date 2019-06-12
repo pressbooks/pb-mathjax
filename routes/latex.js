@@ -4,6 +4,7 @@ const mjAPI = require('mathjax-node');
 const sharp = require('sharp');
 const express = require('express');
 const router = express.Router();
+const path = require('path');
 
 router.get('/', (req, res, next) => {
 
@@ -39,6 +40,9 @@ router.get('/', (req, res, next) => {
   // Convert LaTeX into an image
   // --------------------------------------------------------------------------
 
+  // Error image, just in case
+  const formulaDoesNotParse = path.resolve('public/images/formula_does_not_parse.png');
+
   // Setup CSS for SVG
   const svgCss = `color: ${myForeground};`;
 
@@ -47,7 +51,7 @@ router.get('/', (req, res, next) => {
     MathJax: {
       extensions: [ 'Safe.js' ],
       displayMessages: false,
-      displayErrors: false,
+      displayErrors: true,
       TeX: {
         // @see http://docs.mathjax.org/en/latest/tex.html
         extensions: ['autoload-all.js'],
@@ -65,28 +69,32 @@ router.get('/', (req, res, next) => {
     svg: true,
     speakText: true, // a11y
   }).then((data) => {
+    if (data.width === '0') {
+      throw new Error('Width equals 0, broken SVG');
+    }
     // Inject CSS
     let svg = data.svg;
     svg = svg.replace(/<title/, `<style>/* <![CDATA[ */ svg { ${svgCss} } /* ]]> */</style><title`);
     if (isSvg) {
       // SVG
-      res.set('Content-Type', 'image/svg+xml');
-      res.send(svg);
+      return res.set('Content-Type', 'image/svg+xml').send(svg);
     } else {
       // PNG
       sharp(Buffer.from(svg), { density: dpi })
       .png()
       .toBuffer()
       .then((png) => {
-        res.set('Content-Type', 'image/png');
-        res.send(png);
+        return res.set('Content-Type', 'image/png').send(png);
       }).catch((error) => {
-        next(error);
+        console.error('There was a problem with Sharp:');
+        console.error(error);
+        return res.status(500).sendFile(formulaDoesNotParse);
       });
     }
   }).catch((error) => {
-    error = new Error(error.toString()); // TODO: Why isn't this an error object?
-    next(error);
+    console.error('There was a problem with MathJax:');
+    console.error(error);
+    return res.status(500).sendFile(formulaDoesNotParse);
   });
 });
 
