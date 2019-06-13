@@ -72,7 +72,7 @@ Same as LaTeX above but instead of `latex?latex=<LaTeX>` do:
 + AsciiMath: `http://localhost:3000/asciimath?asciimath=<AsciiMath>` `...`
 + MathML: `http://localhost:3000/mathml?mathml=<MathML>` `...`
 
----
+# Links to the corresponing Pressbooks code (in PHP)
 
 (*) _Work in progress:_
 + https://github.com/pressbooks/pressbooks/tree/mathjax
