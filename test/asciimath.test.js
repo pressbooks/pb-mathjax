@@ -29,6 +29,15 @@ describe('Testing the /asciimath route', function() {
         });
   });
 
-  // TODO: Bad AsciiMath? Haven't been able to crash it like LaTeX does
+  it('Should exit from a crash', function() {
+    // https://github.com/mathjax/MathJax-node/issues/441
+    // https://github.com/mathjax/MathJax-node/pull/442
+    this.timeout(6000);
+    return request(app).
+        get('asciimath?asciimath=%5Cbegin%7Bequation%2A%7D%20%20A%20%3D%20%5Cleft%5B%20%5Cbegin%7Barray%7D%7Bcccc%7D%20%20a_%7B11%7D%20%26%20a_%7B12%7D%20%26%20a_%7B13%7D%20%26%20a_%7B14%7D%20%5C%5C%20%20a_%7B21%7D%20%26%20a_%7B22%7D%20%26%20a_%7B23%7D%20%26%20a_%7B24%7D%20%5C%5C%20%20a_%7B31%7D%20%26%20a_%7B32%7D%20%26%20a_%7B33%7D%20%26%20a_%7B34%7D%20%20%5Cend%7Barray%7D%20%5Cright%5D%20%20%5Cend%7Bequation%2A%7D&fg=561442').
+        catch((err) => {
+          expect(err.toString()).to.contain('ECONNREFUSED');
+        });
+  });
 
 });
