@@ -28,8 +28,8 @@ module.exports.generate = (configs, req, res, next) => {
 
   // Dpi
   dpi = parseInt(dpi);
-  if (isNaN(dpi)) dpi = 72;
-  if (dpi < 72) dpi = 72; // Min
+  if (isNaN(dpi)) dpi = 75;
+  if (dpi < 75) dpi = 75; // Min
   if (dpi > 2400) dpi = 2400; // Max
 
   // Check to see if SVG
