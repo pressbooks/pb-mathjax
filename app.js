@@ -39,4 +39,7 @@ app.use(function(err, req, res, next) {
   res.render('error');
 });
 
+// Used to store config as a global variable. If it changes we must call mjAPI.start()
+app.locals.globalMathJaxConfig = {};
+
 module.exports = app;

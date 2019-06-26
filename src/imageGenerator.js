@@ -3,6 +3,7 @@
 const mjAPI = require('mathjax-node');
 const sharp = require('sharp');
 const path = require('path');
+const assert = require('assert');
 
 module.exports.generate = (configs, req, res, next) => {
 
@@ -11,12 +12,35 @@ module.exports.generate = (configs, req, res, next) => {
   // --------------------------------------------------------------------------
 
   let myForeground = req.query.fg;
+  let myFont = req.query.font;
   let dpi = req.query.dpi;
   let isSvg = req.query.svg;
 
   // --------------------------------------------------------------------------
   // Sanitize Params
   // --------------------------------------------------------------------------
+
+  // Font
+  function inArray(needle, haystack) {
+    let length = haystack.length;
+    for (let i = 0; i < length; i++) {
+      if (haystack[i] === needle) return true;
+    }
+    return false;
+  }
+  const possibleFonts = [
+    'TeX',
+    'STIX-Web',
+    'Asana-Math',
+    'Neo-Euler',
+    'Gyre-Pagella',
+    'Gyre-Termes',
+    'Latin-Modern',
+  ];
+  if (!inArray(myFont, possibleFonts)) {
+    myFont = possibleFonts[0];
+  }
+  configs.mathjax.MathJax.SVG.font = myFont;
 
   // Font Color
   function isValidColor(str) {
@@ -55,8 +79,17 @@ module.exports.generate = (configs, req, res, next) => {
     // @see https://github.com/mathjax/MathJax-node/issues/441
     console.error('Too long, Something crashed? Please restart the server.');
     process.exit(1);
-  }, 5000);
-  mjAPI.config(configs.mathjax);
+  }, 6000);
+  try {
+    mjAPI.config(configs.mathjax);
+    assert.deepEqual(configs.mathjax, req.app.locals.globalMathJaxConfig,
+        'MathJax configuration has changed, restart mathjax-node');
+  } catch (e) {
+    console.debug(e.message);
+    req.app.locals.globalMathJaxConfig = JSON.parse(
+        JSON.stringify(configs.mathjax)); // Clone without reference
+    mjAPI.start();
+  }
   mjAPI.typeset(configs.typeset).then((data) => {
     clearTimeout(tooLong);
     if (data.width === '0') {
