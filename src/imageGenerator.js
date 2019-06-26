@@ -29,6 +29,7 @@ module.exports.generate = (configs, req, res, next) => {
     }
     return false;
   }
+
   const possibleFonts = [
     'TeX',
     'STIX-Web',
@@ -47,6 +48,7 @@ module.exports.generate = (configs, req, res, next) => {
   function isValidColor(str) {
     return str.match(/^#[a-f0-9]{6}$/i) !== null;
   }
+
   myForeground = isValidColor(`#${myForeground}`)
       ? `#${myForeground}`
       : '#000000';
@@ -75,12 +77,14 @@ module.exports.generate = (configs, req, res, next) => {
         path.resolve('public/images/formula_does_not_parse.png'));
   }
 
-  // Consider an init longer than 5 seconds a crash and exit
+  // Consider an init longer than 7 seconds a crash and exit
   const tooLong = setTimeout(() => {
     // @see https://github.com/mathjax/MathJax-node/issues/441
     console.error('Too long, Something crashed? Please restart the server.');
     process.exit(1);
   }, 7000);
+
+  // Config & Start
   try {
     mjAPI.config(configs.mathjax);
     assert.deepEqual(configs.mathjax, req.app.locals.globalMathJaxConfig,
@@ -91,8 +95,12 @@ module.exports.generate = (configs, req, res, next) => {
       req.app.locals.globalMathJaxConfig = JSON.parse(
           JSON.stringify(configs.mathjax)); // Clone without reference
       mjAPI.start();
+    } else {
+      throw e; // Hot potato!
     }
   }
+
+  // Typeset
   mjAPI.typeset(configs.typeset).then((data) => {
     clearTimeout(tooLong);
     if (data.width === '0') {
