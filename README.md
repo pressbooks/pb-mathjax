@@ -54,14 +54,16 @@ The SVGs and PNGs are generated as follows:
 
 + `http://localhost:3000/latex?latex=<LaTeX>`
 + Foreground color: `http://localhost:3000/latex?latex=<LaTeX>&fg=00ff00`
++ Font: `http://localhost:3000/latex?latex=<LaTeX>&font=Gyre-Pagella`
 + DPI: `http://localhost:3000/latex?latex=<LaTeX>&dpi=300`
 
-Mix and match `fg=<RRGGBB>` and `dpi=<number>` as needed.
+Mix and match `fg=<RRGGBB>`, `font=<string>` and `dpi=<number>` as needed.
 
 ### SVG:
 
 + `http://localhost:3000/latex?latex=<LaTeX>&svg=1`
 + Foreground color: `http://localhost:3000/latex?latex=<LaTeX>&fg=00ff00&svg=1`
++ Font: `http://localhost:3000/latex?latex=<LaTeX>&font=Gyre-Pagella&svg=1`
 
 Ie. same as PNG above with `svg=1` added. Because SVGs are vector images, DPI is not used.
  
