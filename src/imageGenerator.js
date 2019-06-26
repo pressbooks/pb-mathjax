@@ -4,6 +4,7 @@ const mjAPI = require('mathjax-node');
 const sharp = require('sharp');
 const path = require('path');
 const assert = require('assert');
+const AssertionError = require('assert').AssertionError;
 
 module.exports.generate = (configs, req, res, next) => {
 
@@ -79,16 +80,18 @@ module.exports.generate = (configs, req, res, next) => {
     // @see https://github.com/mathjax/MathJax-node/issues/441
     console.error('Too long, Something crashed? Please restart the server.');
     process.exit(1);
-  }, 6000);
+  }, 7000);
   try {
     mjAPI.config(configs.mathjax);
     assert.deepEqual(configs.mathjax, req.app.locals.globalMathJaxConfig,
         'MathJax configuration has changed, restart mathjax-node');
   } catch (e) {
-    console.debug(e.message);
-    req.app.locals.globalMathJaxConfig = JSON.parse(
-        JSON.stringify(configs.mathjax)); // Clone without reference
-    mjAPI.start();
+    if (e instanceof AssertionError) {
+      console.debug(e.message);
+      req.app.locals.globalMathJaxConfig = JSON.parse(
+          JSON.stringify(configs.mathjax)); // Clone without reference
+      mjAPI.start();
+    }
   }
   mjAPI.typeset(configs.typeset).then((data) => {
     clearTimeout(tooLong);
