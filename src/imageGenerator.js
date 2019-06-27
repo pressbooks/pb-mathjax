@@ -84,50 +84,50 @@ module.exports.generate = (configs, req, res, next) => {
     process.exit(1);
   }, 7000);
 
-  // Config & Start
-  try {
-    mjAPI.config(configs.mathjax);
-    assert.deepEqual(configs.mathjax, req.app.locals.globalMathJaxConfig,
-        'MathJax configuration has changed, restart mathjax-node');
-  } catch (e) {
-    if (e instanceof AssertionError) {
-      console.debug(e.message);
-      req.app.locals.globalMathJaxConfig = JSON.parse(
-          JSON.stringify(configs.mathjax)); // Clone without reference
-      mjAPI.start();
-    } else {
-      throw e; // Hot potato!
-    }
-  }
+  (async function() {
 
-  // Typeset
-  mjAPI.typeset(configs.typeset).then((data) => {
-    clearTimeout(tooLong);
-    if (data.width === '0') {
-      throw new Error('Width equals 0, broken SVG');
+    // Config & Start
+    try {
+      await mjAPI.config(configs.mathjax);
+      assert.deepEqual(configs.mathjax, req.app.locals.globalMathJaxConfig,
+          'MathJax configuration has changed, restart mathjax-node');
+    } catch (e) {
+      if (e instanceof AssertionError) {
+        console.debug(e.message);
+        req.app.locals.globalMathJaxConfig = JSON.parse(
+            JSON.stringify(configs.mathjax)); // Clone without reference
+        await mjAPI.start();
+      } else {
+        throw e; // Hot potato!
+      }
     }
-    // Inject CSS
-    let svg = data.svg;
-    svg = svg.replace(/<title/,
-        `<style>/* <![CDATA[ */ svg { ${svgCss} } /* ]]> */</style><title`);
-    if (isSvg) {
-      // SVG
-      res.set('Content-Type', 'image/svg+xml');
-      return res.send(svg);
-    } else {
-      // PNG
-      sharp(Buffer.from(svg), {density: dpi}).png().toBuffer().then((png) => {
+
+    // Typeset
+    try {
+      let data = await mjAPI.typeset(configs.typeset);
+      clearTimeout(tooLong);
+      if (data.width === '0') {
+        return formulaDoesNotParse('Width equals 0, broken SVG');
+      }
+      // Inject CSS
+      let svg = data.svg;
+      svg = svg.replace(/<title/,
+          `<style>/* <![CDATA[ */ svg { ${svgCss} } /* ]]> */</style><title`);
+      if (isSvg) {
+        // SVG
+        res.set('Content-Type', 'image/svg+xml');
+        return res.send(svg);
+      } else {
+        // PNG
+        let png = await sharp(Buffer.from(svg), {density: dpi}).png().toBuffer();
         res.set('Content-Type', 'image/png');
         return res.send(png);
-      }).catch((err) => {
-        console.error('There was a problem with Sharp:');
-        return formulaDoesNotParse(err);
-      });
+      }
+    } catch (err) {
+      clearTimeout(tooLong);
+      return formulaDoesNotParse(err);
     }
-  }).catch((err) => {
-    clearTimeout(tooLong);
-    console.error('There was a problem with MathJax.Typeset:');
-    return formulaDoesNotParse(err);
-  });
+
+  }());
 
 };
