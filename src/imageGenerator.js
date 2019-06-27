@@ -72,6 +72,7 @@ module.exports.generate = (configs, req, res, next) => {
   // Error image
   function formulaDoesNotParse(err) {
     console.error(err);
+    console.debug('Sending back: formula_does_not_parse.png');
     res.set('pb-mathjax-error', 'Formula does not parse');
     return res.sendFile(
         path.resolve('public/images/formula_does_not_parse.png'));
