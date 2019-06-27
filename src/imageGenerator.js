@@ -71,6 +71,7 @@ module.exports.generate = (configs, req, res, next) => {
 
   // Error image
   function formulaDoesNotParse(err) {
+    req.app.locals.startingMathJax = false;
     console.error(err);
     res.set('pb-mathjax-error', 'Formula does not parse');
     return res.sendFile(
@@ -91,10 +92,14 @@ module.exports.generate = (configs, req, res, next) => {
         'MathJax configuration has changed, restart mathjax-node');
   } catch (e) {
     if (e instanceof AssertionError) {
+      while (req.app.locals.startingMathJax) {
+        // 1 at a time...
+      }
+      req.app.locals.startingMathJax = true;
+      req.app.locals.globalMathJaxConfig = JSON.parse(JSON.stringify(configs.mathjax)); // Clone without reference
       console.debug(e.message);
-      req.app.locals.globalMathJaxConfig = JSON.parse(
-          JSON.stringify(configs.mathjax)); // Clone without reference
       mjAPI.start();
+      req.app.locals.startingMathJax = false;
     } else {
       throw e; // Hot potato!
     }
@@ -103,6 +108,9 @@ module.exports.generate = (configs, req, res, next) => {
   // Typeset
   mjAPI.typeset(configs.typeset).then((data) => {
     clearTimeout(tooLong);
+    if (data.errors) {
+      throw new Error('Unexpected, should have been handled Promise.reject?');
+    }
     if (data.width === '0') {
       throw new Error('Width equals 0, broken SVG');
     }
