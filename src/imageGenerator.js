@@ -3,10 +3,16 @@
 const mjAPI = require('mathjax-node');
 const sharp = require('sharp');
 const path = require('path');
-const assert = require('assert');
-const AssertionError = require('assert').AssertionError;
+const deepEqual = require('fast-deep-equal');
 
-module.exports.generate = (configs, req, res, next) => {
+/**
+ * @param configs Configurations supplied by the route
+ * @param configs.typeset MathJax-Node typeset options
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next middleware function
+ */
+module.exports.generate = async (configs, req, res, next) => {
 
   // --------------------------------------------------------------------------
   // Params
@@ -42,7 +48,6 @@ module.exports.generate = (configs, req, res, next) => {
   if (!inArray(myFont, possibleFonts)) {
     myFont = possibleFonts[0];
   }
-  configs.mathjax.MathJax.SVG.font = myFont;
 
   // Font Color
   function isValidColor(str) {
@@ -66,6 +71,33 @@ module.exports.generate = (configs, req, res, next) => {
   const svgCss = `color: ${myForeground};`;
 
   // --------------------------------------------------------------------------
+  // One MathJax Config To Rule Them All (performance/crashing fix)
+  // --------------------------------------------------------------------------
+
+  const mathJaxConfig = {
+    MathJax: {
+      extensions: ['Safe.js'],
+      displayMessages: false,
+      displayErrors: false,
+      TeX: {
+        // @see http://docs.mathjax.org/en/latest/tex.html
+        extensions: ['autoload-all.js'],
+      },
+      AsciiMath: {
+        // @see http://docs.mathjax.org/en/latest/asciimath.html
+      },
+      MathML: {
+        // @see http://docs.mathjax.org/en/latest/mathml.html
+        extensions: ['content-mathml.js'],
+      },
+      SVG: {
+        blacker: 0,
+        font: myFont
+      },
+    },
+  };
+
+  // --------------------------------------------------------------------------
   // Convert math into an image
   // --------------------------------------------------------------------------
 
@@ -85,50 +117,44 @@ module.exports.generate = (configs, req, res, next) => {
     process.exit(1);
   }, 7000);
 
-  (async function() {
+  try {
 
     // Config & Start
-    try {
-      await mjAPI.config(configs.mathjax);
-      assert.deepEqual(configs.mathjax, req.app.locals.globalMathJaxConfig,
-          'MathJax configuration has changed, restart mathjax-node');
-    } catch (e) {
-      if (e instanceof AssertionError) {
-        console.debug(e.message);
-        req.app.locals.globalMathJaxConfig = JSON.parse(
-            JSON.stringify(configs.mathjax)); // Clone without reference
-        await mjAPI.start();
-      } else {
-        throw e; // Hot potato!
-      }
+    mjAPI.config(mathJaxConfig);
+    if (req.app.locals.globalMathJaxConfig === null) {
+      // Start is done automatically when typeset is first called
+      req.app.locals.globalMathJaxConfig = JSON.parse(
+          JSON.stringify(mathJaxConfig)); // Clone without reference
+    } else if (!deepEqual(mathJaxConfig, req.app.locals.globalMathJaxConfig)) {
+      console.debug('MathJax configuration has changed, restart mathjax-node');
+      req.app.locals.globalMathJaxConfig = JSON.parse(
+          JSON.stringify(mathJaxConfig)); // Clone without reference
+      mjAPI.start();
     }
 
     // Typeset
-    try {
-      let data = await mjAPI.typeset(configs.typeset);
-      clearTimeout(tooLong);
-      if (data.width === '0') {
-        return formulaDoesNotParse('Width equals 0, broken SVG');
-      }
-      // Inject CSS
-      let svg = data.svg;
-      svg = svg.replace(/<title/,
-          `<style>/* <![CDATA[ */ svg { ${svgCss} } /* ]]> */</style><title`);
-      if (isSvg) {
-        // SVG
-        res.set('Content-Type', 'image/svg+xml');
-        return res.send(svg);
-      } else {
-        // PNG
-        let png = await sharp(Buffer.from(svg), {density: dpi}).png().toBuffer();
-        res.set('Content-Type', 'image/png');
-        return res.send(png);
-      }
-    } catch (err) {
-      clearTimeout(tooLong);
-      return formulaDoesNotParse(err);
+    let data = await mjAPI.typeset(configs.typeset);
+    clearTimeout(tooLong);
+    if (data.width === '0') {
+      return formulaDoesNotParse('Width equals 0, broken SVG');
     }
-
-  }());
+    // Inject CSS
+    let svg = data.svg;
+    svg = svg.replace(/<title/,
+        `<style>/* <![CDATA[ */ svg { ${svgCss} } /* ]]> */</style><title`);
+    if (isSvg) {
+      // SVG
+      res.set('Content-Type', 'image/svg+xml');
+      return res.send(svg);
+    } else {
+      // PNG
+      let png = await sharp(Buffer.from(svg), {density: dpi}).png().toBuffer();
+      res.set('Content-Type', 'image/png');
+      return res.send(png);
+    }
+  } catch (err) {
+    clearTimeout(tooLong);
+    return formulaDoesNotParse(err);
+  }
 
 };
