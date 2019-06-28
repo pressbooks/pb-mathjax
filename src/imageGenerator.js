@@ -118,22 +118,26 @@ module.exports.generate = async (configs, req, res, next) => {
   }, 7000);
 
   try {
-
-    // Config & Start
+    const restartTime = Date.now();
+    while ((Date.now() - restartTime) < 10000 && req.app.locals.globalMathJaxIsRestarting) {
+      // Try to avoid a race condition
+    }
+    req.app.locals.globalMathJaxIsRestarting = true;
+    // Configure
     mjAPI.config(mathJaxConfig);
     if (req.app.locals.globalMathJaxConfig === null) {
       // Start is done automatically when typeset is first called
-      req.app.locals.globalMathJaxConfig = JSON.parse(
-          JSON.stringify(mathJaxConfig)); // Clone without reference
+      req.app.locals.globalMathJaxConfig = JSON.parse(JSON.stringify(mathJaxConfig)); // Clone without reference
     } else if (!deepEqual(mathJaxConfig, req.app.locals.globalMathJaxConfig)) {
+      // Start
       console.debug('MathJax configuration has changed, restart mathjax-node');
-      req.app.locals.globalMathJaxConfig = JSON.parse(
-          JSON.stringify(mathJaxConfig)); // Clone without reference
+      req.app.locals.globalMathJaxConfig = JSON.parse(JSON.stringify(mathJaxConfig)); // Clone without reference
       mjAPI.start();
     }
 
     // Typeset
     let data = await mjAPI.typeset(configs.typeset);
+    req.app.locals.globalMathJaxIsRestarting = false;
     clearTimeout(tooLong);
     if (data.width === '0') {
       return formulaDoesNotParse('Width equals 0, broken SVG');
@@ -153,6 +157,7 @@ module.exports.generate = async (configs, req, res, next) => {
       return res.send(png);
     }
   } catch (err) {
+    req.app.locals.globalMathJaxIsRestarting = false;
     clearTimeout(tooLong);
     return formulaDoesNotParse(err);
   }

@@ -39,7 +39,9 @@ app.use(function(err, req, res, next) {
   res.render('error');
 });
 
-// Used to store config as a global variable. If it changes we must call mjAPI.start()
+// Store MathJax config as a global variable. If it changes we must call mjAPI.start()
 app.locals.globalMathJaxConfig = null;
+// Used to stop race conditions. Multiple calls to mjAPI.start(), at the same time, crashes MathJax in unexpected ways.
+app.locals.globalMathJaxIsRestarting = false;
 
 module.exports = app;
