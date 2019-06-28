@@ -4,6 +4,7 @@ const mjAPI = require('mathjax-node');
 const sharp = require('sharp');
 const path = require('path');
 const deepEqual = require('fast-deep-equal');
+const chillout = require('chillout');
 
 /**
  * @param configs Configurations supplied by the route
@@ -119,9 +120,11 @@ module.exports.generate = async (configs, req, res, next) => {
 
   try {
     const restartTime = Date.now();
-    while ((Date.now() - restartTime) < 10000 && req.app.locals.globalMathJaxIsRestarting) {
-      // Try to avoid a race condition
-    }
+    await chillout.waitUntil(() => {
+      if (req.app.locals.globalMathJaxIsRestarting === false || (Date.now() - restartTime) > 10000 ) {
+        return chillout.StopIteration; // break loop
+      }
+    });
     req.app.locals.globalMathJaxIsRestarting = true;
     // Configure
     mjAPI.config(mathJaxConfig);
