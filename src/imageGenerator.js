@@ -119,13 +119,17 @@ module.exports.generate = async (configs, req, res, next) => {
   }, 7000);
 
   try {
-    const restartTime = Date.now();
-    await chillout.waitUntil(() => {
-      if (req.app.locals.globalMathJaxIsRestarting === false || (Date.now() - restartTime) > 10000 ) {
-        return chillout.StopIteration; // break loop
-      }
-    });
+    // Stop race condition. Multiple calls to mjAPI.start(), at the same time, crashes MathJax in unexpected ways
+    if (req.app.locals.globalMathJaxIsRestarting) {
+      const restartTime = Date.now();
+      await chillout.waitUntil(() => {
+        if (req.app.locals.globalMathJaxIsRestarting === false || (Date.now() - restartTime) > 10000) {
+          return chillout.StopIteration; // break loop
+        }
+      });
+    }
     req.app.locals.globalMathJaxIsRestarting = true;
+
     // Configure
     mjAPI.config(mathJaxConfig);
     if (req.app.locals.globalMathJaxConfig === null) {
