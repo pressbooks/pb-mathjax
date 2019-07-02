@@ -76,10 +76,14 @@ module.exports.generate = async (configs, req, res, next) => {
   // --------------------------------------------------------------------------
 
   const mathJaxConfig = {
+    paths: {
+      'mypatches': path.dirname(path.resolve('src/myPatches')),
+    },
+    extensions: '[mypatches]/myPatches.js',
+    displayMessages: false,
+    displayErrors: false,
     MathJax: {
       extensions: ['Safe.js'],
-      displayMessages: false,
-      displayErrors: false,
       TeX: {
         // @see http://docs.mathjax.org/en/latest/tex.html
         extensions: ['autoload-all.js'],
@@ -93,7 +97,7 @@ module.exports.generate = async (configs, req, res, next) => {
       },
       SVG: {
         blacker: 0,
-        font: myFont
+        font: myFont,
       },
     },
   };
