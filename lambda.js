@@ -1,4 +1,5 @@
 'use strict'
+process.env.FONTCONFIG_PATH = '/var/task/fonts';
 const awsServerlessExpress = require('aws-serverless-express')
 const app = require('./app')
 const binaryMimeTypes = [
