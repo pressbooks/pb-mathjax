@@ -44,7 +44,7 @@ Pressbooks users wanted a [MathJax](https://www.mathjax.org/) solution.
 
 MathJax's [CommonHTML output](http://docs.mathjax.org/en/latest/options/output-processors/CommonHTML.html) works great in webbooks, but not in PDFs, EPUBs, MOBIs, ...
 
-Nowadays(*), Pressbooks uses CommonHTML output in webbooks, SVGs in PDFs, and PNGs in MOBI/EPUBs. 
+Nowadays, Pressbooks uses CommonHTML output in webbooks, SVGs in PDFs, and PNGs in MOBI/EPUBs. 
 
 The SVGs and PNGs are generated as follows:
 
@@ -73,10 +73,4 @@ Same as LaTeX above but instead of `latex?latex=<LaTeX>` do:
 
 + AsciiMath: `http://localhost:3000/asciimath?asciimath=<AsciiMath>` `...`
 + MathML: `http://localhost:3000/mathml?mathml=<MathML>` `...`
-
-# Links to the corresponing Pressbooks code (in PHP)
-
-(*) _Work in progress:_
-+ https://github.com/pressbooks/pressbooks/tree/mathjax
-+ https://github.com/pressbooks/pressbooks/blob/mathjax/inc/class-mathjax.php
 
