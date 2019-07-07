@@ -1,19 +1,6 @@
-A replacement for `https://wp.com/latex.php`  but instead of LaTeX, it uses [MathJax](https://www.mathjax.org/).
-
-# Installation
-
-First, install Node.js
-
-Next:
-
-    git clone git@github.com:pressbooks/pb-mathjax.git
-    cd pb-mathjax
-    npm install
-    npm start
-    
-Finally, go to: http://localhost:3000/  
-
 # Synopsis
+
+This is a replacement for `https://wp.com/latex.php`  but instead of LaTeX, it uses [MathJax](https://www.mathjax.org/).
 
 Auttomatic's open-source Jetpack plugin has a [LaTeX feature](https://en.support.wordpress.com/latex/) that [is hardcoded](https://github.com/Automattic/jetpack/blob/45a6dfefbd8f4239cd61cbd28f361e9ef6036cac/modules/latex.php#L87)
 to call `https://s0.wp.com/latex.php`
@@ -73,4 +60,40 @@ Same as LaTeX above but instead of `latex?latex=<LaTeX>` do:
 
 + AsciiMath: `http://localhost:3000/asciimath?asciimath=<AsciiMath>` `...`
 + MathML: `http://localhost:3000/mathml?mathml=<MathML>` `...`
+
+# Installation
+
+Install Node.js 10.x LTS, Then:
+
+    git clone git@github.com:pressbooks/pb-mathjax.git
+    cd pb-mathjax
+    npm install
+    npm start
+    
+Finally, go to: `http://localhost:3000/`
+
+## Deploy to a Production Server
+
+Install [PM2](http://pm2.keymetrics.io/) on your server, then:
+
+    cd ~/code/github/pressbooks/pb-mathjax
+    pm2 start bin/www --name pb-mathjax
+
+Pb-mathjax will be available at `http://YOURSERVER:3000/` and will run forever (or until you kill PM2.) Use in Pressbooks as the value for `PB_MATHJAX_URL`
+
+More info: http://pm2.keymetrics.io/docs/usage/quick-start/
+
+
+## Deploy to AWS Lambda
+
+Install [Claudia.Js](https://claudiajs.com/), then:
+
+    cd ~/code/github/pressbooks/pb-mathjax
+    claudia create --handler lambda.handler --deploy-proxy-api --region us-east-1 --timeout 15 --memory 256 --profile yourself
+
+Where `us-east-1` is your AWS region and `yourself` corresponds to an identity in your `~/.aws/credentials` file. 
+
+If everything goes well, the above command will finish after a few moments and print a response with a URL. Use in Pressbooks as the value for `PB_MATHJAX_URL`
+
+More info: https://claudiajs.com/tutorials/installing.html https://github.com/claudiajs/claudia/blob/master/docs/
 
