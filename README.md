@@ -77,6 +77,7 @@ Finally, go to: `http://localhost:3000/`
 Install [PM2](http://pm2.keymetrics.io/) on your server, then:
 
     cd ~/code/github/pressbooks/pb-mathjax
+    npm install --only=prod
     pm2 start bin/www --name pb-mathjax
 
 Pb-mathjax will be available at `http://YOURSERVER:3000/` and will run forever (or until you kill PM2.) Use in Pressbooks as the value for `PB_MATHJAX_URL`
