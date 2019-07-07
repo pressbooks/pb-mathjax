@@ -87,7 +87,7 @@ More info: http://pm2.keymetrics.io/docs/usage/quick-start/
 
 ## Deploy to AWS Lambda
 
-Install [Claudia.Js](https://claudiajs.com/), then:
+Install [Claudia.js](https://claudiajs.com/), then:
 
     cd ~/code/github/pressbooks/pb-mathjax
     claudia create --handler lambda.handler --deploy-proxy-api --region us-east-1 --timeout 15 --memory 256 --profile yourself
