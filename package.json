@@ -16,7 +16,7 @@
     "mathjax-node": "github:mathjax/MathJax-node#issue441",
     "morgan": "~1.9.1",
     "sharp": "^0.22.1",
-    "twig": "~0.10.3"
+    "twig": "~1.15.4"
   },
   "devDependencies": {
     "chai": "^4.2.0",
