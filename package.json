@@ -11,7 +11,7 @@
     "chillout": "^5.0.0",
     "debug": "~4.3.4",
     "express": "^4.17.3",
-    "fast-deep-equal": "^2.0.1",
+    "fast-deep-equal": "^3.1.3",
     "http-errors": "~2.0.0",
     "mathjax-node": "github:mathjax/MathJax-node#issue441",
     "morgan": "~1.10.0",
