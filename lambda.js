@@ -1,15 +1,17 @@
 'use strict'
 process.env.FONTCONFIG_PATH = '/var/task/fonts';
-const awsServerlessExpress = require('aws-serverless-express')
+const serverlessExpress = require('@vendia/serverless-express')
 const app = require('./app')
-const binaryMimeTypes = [
-	'application/octet-stream',
-	'font/eot',
-	'font/opentype',
-	'font/otf',
-	'image/jpeg',
-	'image/png',
-	'image/svg+xml'
-]
-const server = awsServerlessExpress.createServer(app, null, binaryMimeTypes);
-exports.handler = (event, context) => awsServerlessExpress.proxy(server, event, context)
+// const binaryMimeTypes = [
+// 	'application/octet-stream',
+// 	'font/eot',
+// 	'font/opentype',
+// 	'font/otf',
+// 	'image/jpeg',
+// 	'image/png',
+// 	'image/svg+xml'
+// ]
+exports.handler = serverlessExpress({app})
+
+// const server = awsServerlessExpress.createServer(app, null, binaryMimeTypes);
+// exports.handler = (event, context) => awsServerlessExpress.proxy(server, event, context)
