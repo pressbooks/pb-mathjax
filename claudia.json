@@ -8,26 +8,3 @@
     "id": "atu0g9ctah"
   }
 }
-
-{
-  "lambda": {
-    "role": "<LAMBDA_CONGIRURATION_PERMISSION_ROLE_NAME>",
-    "name": "pb-mathjax",
-    "region": "ca-central-1"
-  },
-  "api": {
-    "id": "<API_GATEWAY_ID>"
-  }
-}
-
-
-{
-  "lambda": {
-    "role": "<LAMBDA_CONGIRURATION_PERMISSION_ROLE_NAME>",
-    "name": "pb-mathjax",
-    "region": "ca-central-1"
-  },
-  "api": {
-    "id": "jin71j2ebb"
-  }
-}
