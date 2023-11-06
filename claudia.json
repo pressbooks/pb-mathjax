@@ -1,0 +1,10 @@
+{
+  "lambda": {
+    "role": "pb-mathjax-executor",
+    "name": "pb-mathjax",
+    "region": "ca-central-1"
+  },
+  "api": {
+    "id": "atu0g9ctah"
+  }
+}
