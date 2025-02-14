@@ -5,17 +5,23 @@ const { TeX } = require('mathjax-full/js/input/tex.js');
 const { SVG } = require('mathjax-full/js/output/svg.js');
 const { liteAdaptor } = require('mathjax-full/js/adaptors/liteAdaptor.js');
 const { RegisterHTMLHandler } = require('mathjax-full/js/handlers/html.js');
-const sharp = require('sharp');
-const path = require('path');
+const { AllPackages } = require('mathjax-full/js/input/tex/AllPackages.js');
 
-// Initialize MathJax components
 const adaptor = liteAdaptor();
 RegisterHTMLHandler(adaptor);
 
-const tex = new TeX({ packages: ['base', 'ams'] });
+const tex = new TeX({
+  packages: AllPackages.concat(['physics']),
+  inlineMath: [['$', '$'], ['\\(', '\\)']],
+  displayMath: [['$$', '$$'], ['\\[', '\\]']],
+});
+
 const svg = new SVG({ fontCache: 'none' });
 
-const mathJaxDocument = mathjax.document('', { InputJax: tex, OutputJax: svg });
+const mathJaxDocument = mathjax.document('', {
+  InputJax: tex,
+  OutputJax: svg
+});
 
 module.exports.generate = async (configs, req, res, next) => {
   let myForeground = req.query.fg;
@@ -49,19 +55,28 @@ module.exports.generate = async (configs, req, res, next) => {
   isSvg = !(!isSvg || isSvg === '0');
 
   try {
-    // Generate SVG output
     const math = configs.typeset.math || '';
 
-// Detect if the math expression is in inline mode
     const isInline = (math.startsWith('\\(') && math.endsWith('\\)')) ||
-        (math.startsWith('$') && math.endsWith('$'));
+        (math.startsWith('$') && math.endsWith('$') && !math.startsWith('$$'));
 
-// Remove delimiters if present
-    const cleanMath = isInline ? math.slice(1, -1) : math;
+    const isBlock = (math.startsWith('\\[') && math.endsWith('\\]')) ||
+        (math.startsWith('$$') && math.endsWith('$$'));
 
-// Convert with the correct display mode
+    let cleanMath = math.trim();
+
+    // Clean delimiters
+    if (isInline) {
+      if (math.startsWith('\\(') && math.endsWith('\\)')) {
+        cleanMath = math.slice(2, -2);
+      } else if (math.startsWith('$') && math.endsWith('$')) {
+        cleanMath = math.slice(1, -1);
+      }
+    } else if (isBlock) {
+      cleanMath = math.slice(2, -2);
+    }
+
     const node = mathJaxDocument.convert(cleanMath, { display: !isInline });
-
     let svgContent = adaptor.innerHTML(node);
 
     if (!svgContent.includes('<svg')) {
@@ -78,6 +93,7 @@ module.exports.generate = async (configs, req, res, next) => {
       return res.send(svgContent);
     } else {
       // Convert SVG to PNG
+      const sharp = require('sharp');
       const png = await sharp(Buffer.from(svgContent), { density: dpi }).png().toBuffer();
       res.set('Content-Type', 'image/png');
       return res.send(png);
@@ -85,6 +101,7 @@ module.exports.generate = async (configs, req, res, next) => {
   } catch (err) {
     console.error(err);
     res.set('pb-mathjax-error', 'Formula does not parse');
+    const path = require('path');
     return res.sendFile(path.resolve('public/images/formula_does_not_parse.png'));
   }
 };
