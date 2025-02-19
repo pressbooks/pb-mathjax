@@ -3,6 +3,8 @@
 const { mathjax } = require('mathjax-full/js/mathjax.js');
 const { TeX } = require('mathjax-full/js/input/tex.js');
 const { SVG } = require('mathjax-full/js/output/svg.js');
+const { MathML } = require('mathjax-full/js/input/mathml.js');
+const { AsciiMath } = require('mathjax-full/js/input/asciimath.js');
 const { liteAdaptor } = require('mathjax-full/js/adaptors/liteAdaptor.js');
 const { RegisterHTMLHandler } = require('mathjax-full/js/handlers/html.js');
 const { AllPackages } = require('mathjax-full/js/input/tex/AllPackages.js');
@@ -10,36 +12,54 @@ const { AllPackages } = require('mathjax-full/js/input/tex/AllPackages.js');
 const adaptor = liteAdaptor();
 RegisterHTMLHandler(adaptor);
 
+const extraPackages = ['physics'];
+
+// Configure TeX input
 const tex = new TeX({
-  packages: AllPackages.concat(['physics']),
+  packages: AllPackages.concat(extraPackages),
   inlineMath: [['$', '$'], ['\\(', '\\)']],
-  displayMath: [['$$', '$$'], ['\\[', '\\]']],
+  displayMath: [['$$', '$$'], ['\\[', '\\]']]
 });
 
-const svg = new SVG({ fontCache: 'none' });
+const mathml = new MathML();
+const asciimath = new AsciiMath(); // Enable AsciiMath input
 
-const mathJaxDocument = mathjax.document('', {
-  InputJax: tex,
-  OutputJax: svg
+const svg = new SVG({
+  fontCache: 'none',
+  mtextInheritFont: true,
+  mathmlSpacing: false
 });
+
+function handleError(res) {
+  res.set('pb-mathjax-error', 'Formula does not parse');
+  const path = require('path');
+  return res.status(400).sendFile(path.resolve('public/images/formula_does_not_parse.png'));
+}
 
 module.exports.generate = async (configs, req, res, next) => {
   let myForeground = req.query.fg;
-  let myFont = req.query.font;
   let dpi = req.query.dpi;
   let isSvg = req.query.svg;
 
-  function inArray(needle, haystack) {
-    return haystack.includes(needle);
+  let inputFormat = tex;
+
+  switch (configs.typeset.format) {
+    case 'TeX':
+      break;
+    case 'MathML':
+        inputFormat = mathml;
+      break;
+    case 'AsciiMath':
+        inputFormat = asciimath;
+      break;
+    default:
+      return handleError(res);
   }
 
-  const possibleFonts = [
-    'TeX', 'STIX-Web', 'Asana-Math', 'Neo-Euler',
-    'Gyre-Pagella', 'Gyre-Termes', 'Latin-Modern',
-  ];
-  if (!inArray(myFont, possibleFonts)) {
-    myFont = 'TeX';
-  }
+  const mathJaxDocument = mathjax.document('', {
+    InputJax: inputFormat,
+    OutputJax: svg
+  });
 
   function isValidColor(str) {
     return /^#[a-f0-9]{6}$/i.test(`#${str}`);
@@ -55,7 +75,12 @@ module.exports.generate = async (configs, req, res, next) => {
   isSvg = !(!isSvg || isSvg === '0');
 
   try {
-    const math = configs.typeset.math || '';
+    if (!configs?.typeset?.math) {
+      console.log('No math provided');
+      return handleError(res);
+    }
+
+    const math = configs.typeset.math;
 
     const isInline = (math.startsWith('\\(') && math.endsWith('\\)')) ||
         (math.startsWith('$') && math.endsWith('$') && !math.startsWith('$$'));
@@ -65,7 +90,6 @@ module.exports.generate = async (configs, req, res, next) => {
 
     let cleanMath = math.trim();
 
-    // Clean delimiters
     if (isInline) {
       if (math.startsWith('\\(') && math.endsWith('\\)')) {
         cleanMath = math.slice(2, -2);
@@ -76,32 +100,48 @@ module.exports.generate = async (configs, req, res, next) => {
       cleanMath = math.slice(2, -2);
     }
 
-    const node = mathJaxDocument.convert(cleanMath, { display: !isInline });
-    let svgContent = adaptor.innerHTML(node);
+    let svgContent;
+    try {
+      const node = mathJaxDocument.convert(cleanMath, {
+        display: !isInline,
+        em: 16,
+        ex: 8,
+        containerWidth: 1000,
+        lineWidth: 1000,
+        scale: 1
+      });
 
-    if (!svgContent.includes('<svg')) {
-      throw new Error('Invalid SVG output');
-    }
+      svgContent = adaptor.innerHTML(node);
 
-    svgContent = svgContent.replace(
-        /<svg([^>]*)style="([^"]*)"/,
-        `<svg$1style="color: ${myForeground}; $2"`
-    );
+      if (!svgContent || !svgContent.includes('<svg') || !svgContent.includes('</svg>')) {
+        return handleError(res);
+      }
 
-    if (isSvg) {
-      res.set('Content-Type', 'image/svg+xml');
-      return res.send(svgContent);
-    } else {
-      // Convert SVG to PNG
-      const sharp = require('sharp');
-      const png = await sharp(Buffer.from(svgContent), { density: dpi }).png().toBuffer();
-      res.set('Content-Type', 'image/png');
-      return res.send(png);
+      svgContent = svgContent.replace(
+          /<svg([^>]*)style="([^"]*)"/,
+          `<svg$1style="color: ${myForeground}; $2"`
+      );
+
+      if (svgContent.includes('merror')) {
+        console.error('MathJax detected an error:', svgContent);
+        return handleError(res);
+      }
+
+      if (isSvg) {
+        res.set('Content-Type', 'image/svg+xml');
+        return res.send(svgContent);
+      } else {
+        const sharp = require('sharp');
+        const png = await sharp(Buffer.from(svgContent), { density: dpi }).png().toBuffer();
+        res.set('Content-Type', 'image/png');
+        return res.send(png);
+      }
+    } catch (err) {
+      console.error('MathJax processing error:', err);
+      return handleError(res);
     }
   } catch (err) {
-    console.error(err);
-    res.set('pb-mathjax-error', 'Formula does not parse');
-    const path = require('path');
-    return res.sendFile(path.resolve('public/images/formula_does_not_parse.png'));
+    console.error('General error:', err);
+    return handleError(res);
   }
 };
