@@ -67,6 +67,11 @@ module.exports.generate = async (configs, req, res, next) => {
     return /^#[a-f0-9]{6}$/i.test(`#${str}`);
   }
 
+  function stripRequireCommands(math) {
+    // Match \require{package} with optional spaces
+    return math.replace(/\\require\s*\{[^}]*\}\s*/g, '');
+  }
+
   myForeground = isValidColor(myForeground) ? `#${myForeground}` : '#000000';
 
   dpi = parseInt(dpi);
@@ -82,7 +87,7 @@ module.exports.generate = async (configs, req, res, next) => {
       return handleError(res);
     }
     // Decode HTML entities in the math input
-    const math = decode(configs.typeset.math);
+    const math = stripRequireCommands(decode(configs.typeset.math));
 
     const isInline = (math.startsWith('\\(') && math.endsWith('\\)')) ||
         (math.startsWith('$') && math.endsWith('$') && !math.startsWith('$$'));

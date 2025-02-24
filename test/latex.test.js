@@ -136,6 +136,15 @@ describe('Testing the /latex route', function() {
                 });
         });
 
+        // ✅ Require Package not required because all commands are included in the default MathJax configuration
+        it('Should strip require command and return parsed formula', function() {
+            return request(app)
+                .get('/latex?latex=\\require{physics} \\( \\dv{f}{x}, \\pdv{f}{x}, \\expval{A}, \\ket{\\psi} \\)&svg=1')
+                .then(function(response) {
+                    expect(response.type).to.contain('image/svg+xml');
+                });
+        });
+
 
     });
 
