@@ -8,6 +8,8 @@ const { AsciiMath } = require('mathjax-full/js/input/asciimath.js');
 const { liteAdaptor } = require('mathjax-full/js/adaptors/liteAdaptor.js');
 const { RegisterHTMLHandler } = require('mathjax-full/js/handlers/html.js');
 const { AllPackages } = require('mathjax-full/js/input/tex/AllPackages.js');
+const { decode } = require('html-entities');
+
 
 const adaptor = liteAdaptor();
 RegisterHTMLHandler(adaptor);
@@ -79,8 +81,8 @@ module.exports.generate = async (configs, req, res, next) => {
       console.log('No math provided');
       return handleError(res);
     }
-
-    const math = configs.typeset.math;
+    // Decode HTML entities in the math input
+    const math = decode(configs.typeset.math);
 
     const isInline = (math.startsWith('\\(') && math.endsWith('\\)')) ||
         (math.startsWith('$') && math.endsWith('$') && !math.startsWith('$$'));

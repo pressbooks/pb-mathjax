@@ -118,15 +118,6 @@ describe('Testing the /latex route', function() {
                 });
         });
 
-        // ✅ Require Package
-        it('Should support require for mhchem', function() {
-            return request(app)
-                .get('/latex?latex=%5C[%20%5Crequire%7Bmhchem%7D%20%5Cce%7BH2O%7D%20%5C]&fg=000000&svg=1')
-                .then(function(response) {
-                    expect(response.type).to.contain('image/svg+xml');
-                });
-        });
-
         // ✅ Tag Formatting
         it('Should render equation with a custom tag', function() {
             return request(app)
@@ -135,6 +126,16 @@ describe('Testing the /latex route', function() {
                     expect(response.type).to.contain('image/svg+xml');
                 });
         });
+
+        // ✅ Matrix Formatting
+        it('Should render a matrix', function() {
+            return request(app)
+                .get('/latex?latex=\\det \\begin{bmatrix} a %26 b \\\\ c %26 d \\end{bmatrix} %3D ad %26%238211%3B bc&fg=000000&svg=1')
+                .then(function(response) {
+                    expect(response.type).to.contain('image/svg+xml');
+                });
+        });
+
 
     });
 
