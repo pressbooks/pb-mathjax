@@ -10,6 +10,23 @@ const { RegisterHTMLHandler } = require('mathjax-full/js/handlers/html.js');
 const { AllPackages } = require('mathjax-full/js/input/tex/AllPackages.js');
 const { decode } = require('html-entities');
 
+function robustDecode(input) {
+  let result = input;
+  let prevResult;
+  do {
+    prevResult = result;
+    try {
+      result = decodeURIComponent(prevResult);
+    } catch (e) {
+      // If we hit an invalid URI, use the last valid result
+      result = prevResult;
+      break;
+    }
+  } while (result !== prevResult);
+  
+  // Then decode HTML entities
+  return decode(result);
+}
 
 const adaptor = liteAdaptor();
 RegisterHTMLHandler(adaptor);
@@ -86,8 +103,8 @@ module.exports.generate = async (configs, req, res, next) => {
       console.log('No math provided');
       return handleError(res);
     }
-    // Decode HTML entities in the math input
-    const math = stripRequireCommands(decode(configs.typeset.math));
+    // Use the robust decoder instead of just decode
+    const math = stripRequireCommands(robustDecode(configs.typeset.math));
 
     const isInline = (math.startsWith('\\(') && math.endsWith('\\)')) ||
         (math.startsWith('$') && math.endsWith('$') && !math.startsWith('$$'));
