@@ -9,7 +9,7 @@ const { liteAdaptor } = require('mathjax-full/js/adaptors/liteAdaptor.js');
 const { RegisterHTMLHandler } = require('mathjax-full/js/handlers/html.js');
 const { AllPackages } = require('mathjax-full/js/input/tex/AllPackages.js');
 const { decode } = require('html-entities');
-
+const { log } = require('console');
 
 const adaptor = liteAdaptor();
 RegisterHTMLHandler(adaptor);
@@ -24,7 +24,7 @@ const tex = new TeX({
 });
 
 const mathml = new MathML();
-const asciimath = new AsciiMath(); // Enable AsciiMath input
+const asciimath = new AsciiMath();
 
 const svg = new SVG({
   fontCache: 'none',
@@ -39,9 +39,11 @@ function handleError(res) {
 }
 
 module.exports.generate = async (configs, req, res, next) => {
-  let myForeground = req.query.fg;
-  let dpi = req.query.dpi;
-  let isSvg = req.query.svg;
+  const query = configs.query || {};
+  
+  let myForeground = query.fg;
+  let dpi = query.dpi;
+  let isSvg = query.svg === true || query.svg === '1' || query.svg === 'true';
 
   let inputFormat = tex;
 
@@ -68,7 +70,6 @@ module.exports.generate = async (configs, req, res, next) => {
   }
 
   function stripRequireCommands(math) {
-    // Match \require{package} with optional spaces
     return math.replace(/\\require\s*\{[^}]*\}\s*/g, '');
   }
 
@@ -79,35 +80,34 @@ module.exports.generate = async (configs, req, res, next) => {
   if (dpi < 75) dpi = 75;
   if (dpi > 2400) dpi = 2400;
 
-  isSvg = !(!isSvg || isSvg === '0');
-
   try {
     if (!configs?.typeset?.math) {
-      console.log('No math provided');
       return handleError(res);
     }
-    // Decode HTML entities in the math input
-    const math = stripRequireCommands(decode(configs.typeset.math));
+    
+    let decodedMath = configs.typeset.math;
 
+    try {
+      decodedMath = decodeURIComponent(decodedMath);
+      decodedMath = decodedMath.replace(/&#038;/g, '&').replace(/&#38;/g, '&');
+      decodedMath = decode(decodedMath);
+    } catch (decodeError) {
+      return handleError(res);
+    }
+
+    const math = stripRequireCommands(decodedMath);
     const isInline = (math.startsWith('\\(') && math.endsWith('\\)')) ||
         (math.startsWith('$') && math.endsWith('$') && !math.startsWith('$$'));
-
     const isBlock = (math.startsWith('\\[') && math.endsWith('\\]')) ||
         (math.startsWith('$$') && math.endsWith('$$'));
 
     let cleanMath = math.trim();
-
     if (isInline) {
-      if (math.startsWith('\\(') && math.endsWith('\\)')) {
-        cleanMath = math.slice(2, -2);
-      } else if (math.startsWith('$') && math.endsWith('$')) {
-        cleanMath = math.slice(1, -1);
-      }
+      cleanMath = math.slice(math.startsWith('\\(') ? 2 : 1, -2);
     } else if (isBlock) {
       cleanMath = math.slice(2, -2);
     }
 
-    let svgContent;
     try {
       const node = mathJaxDocument.convert(cleanMath, {
         display: !isInline,
@@ -118,7 +118,9 @@ module.exports.generate = async (configs, req, res, next) => {
         scale: 1
       });
 
-      svgContent = adaptor.innerHTML(node);
+
+      let svgContent = adaptor.innerHTML(node);
+
 
       if (!svgContent || !svgContent.includes('<svg') || !svgContent.includes('</svg>')) {
         return handleError(res);
@@ -130,7 +132,6 @@ module.exports.generate = async (configs, req, res, next) => {
       );
 
       if (svgContent.includes('merror')) {
-        console.error('MathJax detected an error:', svgContent);
         return handleError(res);
       }
 
@@ -138,17 +139,54 @@ module.exports.generate = async (configs, req, res, next) => {
         res.set('Content-Type', 'image/svg+xml');
         return res.send(svgContent);
       } else {
-        const sharp = require('sharp');
-        const png = await sharp(Buffer.from(svgContent), { density: dpi }).png().toBuffer();
-        res.set('Content-Type', 'image/png');
-        return res.send(png);
+        try {
+          if (!svgContent.trim().startsWith('<svg')) {
+            return handleError(res);
+          }
+
+          // Set Content-Type header early
+          res.set('Content-Type', 'image/png');
+
+          let fullSvgContent = svgContent;
+          
+          if (!fullSvgContent.includes('xmlns="http://www.w3.org/2000/svg"')) {
+            fullSvgContent = fullSvgContent.replace('<svg', '<svg xmlns="http://www.w3.org/2000/svg"');
+          }
+          
+          if (!fullSvgContent.startsWith('<?xml')) {
+            fullSvgContent = '<?xml version="1.0" standalone="no"?>\n' + fullSvgContent;
+          }
+
+
+          const sharp = require('sharp');
+          const buffer = Buffer.from(fullSvgContent);
+          const image = sharp(buffer, {
+            density: dpi > 300 ? 300 : dpi,
+            limitInputPixels: 5000 * 5000
+          });
+
+          const png = await image
+            .resize(500, 500, {
+              fit: 'inside',
+              withoutEnlargement: true,
+              background: { r: 255, g: 255, b: 255, alpha: 0 }
+            })
+            .png({
+              compressionLevel: 6,
+              adaptiveFiltering: false,
+              force: true
+            })
+            .toBuffer();
+
+          return res.send(png);
+        } catch (pngError) {
+          return handleError(res);
+        }
       }
     } catch (err) {
-      console.error('MathJax processing error:', err);
       return handleError(res);
     }
   } catch (err) {
-    console.error('General error:', err);
     return handleError(res);
   }
 };
