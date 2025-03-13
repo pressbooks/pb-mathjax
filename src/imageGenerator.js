@@ -118,14 +118,11 @@ module.exports.generate = async (configs, req, res, next) => {
         scale: 1
       });
 
-      console.log('Node');
-      console.log(node);
 
       let svgContent = adaptor.innerHTML(node);
 
 
       if (!svgContent || !svgContent.includes('<svg') || !svgContent.includes('</svg>')) {
-        console.log('SVG Content is invalid');
         return handleError(res);
       }
 
@@ -135,7 +132,6 @@ module.exports.generate = async (configs, req, res, next) => {
       );
 
       if (svgContent.includes('merror')) {
-        console.log('SVG Content contains merror');
         return handleError(res);
       }
 
@@ -145,7 +141,6 @@ module.exports.generate = async (configs, req, res, next) => {
       } else {
         try {
           if (!svgContent.trim().startsWith('<svg')) {
-            console.log('SVG Content does not start with <svg');
             return handleError(res);
           }
 
@@ -189,13 +184,9 @@ module.exports.generate = async (configs, req, res, next) => {
         }
       }
     } catch (err) {
-      console.log('Error in imageGenerator.js');
-      console.log(err);
       return handleError(res);
     }
   } catch (err) {
-    console.log('Error in imageGenerator.js');
-    console.log(err);
     return handleError(res);
   }
 };
