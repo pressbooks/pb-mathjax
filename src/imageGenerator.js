@@ -9,6 +9,7 @@ const { liteAdaptor } = require('mathjax-full/js/adaptors/liteAdaptor.js');
 const { RegisterHTMLHandler } = require('mathjax-full/js/handlers/html.js');
 const { AllPackages } = require('mathjax-full/js/input/tex/AllPackages.js');
 const { decode } = require('html-entities');
+const { log } = require('console');
 
 const adaptor = liteAdaptor();
 RegisterHTMLHandler(adaptor);
@@ -117,9 +118,14 @@ module.exports.generate = async (configs, req, res, next) => {
         scale: 1
       });
 
+      console.log('Node');
+      console.log(node);
+
       let svgContent = adaptor.innerHTML(node);
 
+
       if (!svgContent || !svgContent.includes('<svg') || !svgContent.includes('</svg>')) {
+        console.log('SVG Content is invalid');
         return handleError(res);
       }
 
@@ -129,6 +135,7 @@ module.exports.generate = async (configs, req, res, next) => {
       );
 
       if (svgContent.includes('merror')) {
+        console.log('SVG Content contains merror');
         return handleError(res);
       }
 
@@ -138,6 +145,7 @@ module.exports.generate = async (configs, req, res, next) => {
       } else {
         try {
           if (!svgContent.trim().startsWith('<svg')) {
+            console.log('SVG Content does not start with <svg');
             return handleError(res);
           }
 
@@ -153,6 +161,7 @@ module.exports.generate = async (configs, req, res, next) => {
           if (!fullSvgContent.startsWith('<?xml')) {
             fullSvgContent = '<?xml version="1.0" standalone="no"?>\n' + fullSvgContent;
           }
+
 
           const sharp = require('sharp');
           const buffer = Buffer.from(fullSvgContent);
@@ -180,9 +189,13 @@ module.exports.generate = async (configs, req, res, next) => {
         }
       }
     } catch (err) {
+      console.log('Error in imageGenerator.js');
+      console.log(err);
       return handleError(res);
     }
   } catch (err) {
+    console.log('Error in imageGenerator.js');
+    console.log(err);
     return handleError(res);
   }
 };
