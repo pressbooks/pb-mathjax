@@ -12,8 +12,8 @@ It works like this:
 I.e.
 
 ```html
-<img 
-src="https://s0.wp.com/latex.php?latex=%5Cdisplaystyle+P_%5Cnu%5E%7B-%5Cmu%7D%28z%29%3D%5Cfrac%7B%5Cleft%28z%5E2-1%5Cright%29%5E%7B%5Cfrac%7B%5Cmu%7D%7B2%7D%7D%7D%7B2%5E%5Cmu+%5Csqrt%7B%5Cpi%7D%5CGamma%5Cleft%28%5Cmu%2B%5Cfrac%7B1%7D%7B2%7D%5Cright%29%7D%5Cint_%7B-1%7D%5E1%5Cfrac%7B%5Cleft%281-t%5E2%5Cright%29%5E%7B%5Cmu+-%5Cfrac%7B1%7D%7B2%7D%7D%7D%7B%5Cleft%28z%2Bt%5Csqrt%7Bz%5E2-1%7D%5Cright%29%5E%7B%5Cmu-%5Cnu%7D%7Ddt&amp;fg=000000" 
+<img
+src="https://s0.wp.com/latex.php?latex=%5Cdisplaystyle+P_%5Cnu%5E%7B-%5Cmu%7D%28z%29%3D%5Cfrac%7B%5Cleft%28z%5E2-1%5Cright%29%5E%7B%5Cfrac%7B%5Cmu%7D%7B2%7D%7D%7D%7B2%5E%5Cmu+%5Csqrt%7B%5Cpi%7D%5CGamma%5Cleft%28%5Cmu%2B%5Cfrac%7B1%7D%7B2%7D%5Cright%29%7D%5Cint_%7B-1%7D%5E1%5Cfrac%7B%5Cleft%281-t%5E2%5Cright%29%5E%7B%5Cmu+-%5Cfrac%7B1%7D%7B2%7D%7D%7D%7B%5Cleft%28z%2Bt%5Csqrt%7Bz%5E2-1%7D%5Cright%29%5E%7B%5Cmu-%5Cnu%7D%7Ddt&amp;fg=000000"
 >
 ```
 
@@ -27,11 +27,11 @@ Such a URL returns a PNG containing math rendered by LaTeX.
 
 Prior to the existence of this microservice, we called `wp.com/latex.php` for our math needs. _(Thanks WordPress!)_
 
-Pressbooks users wanted a [MathJax](https://www.mathjax.org/) solution. 
+Pressbooks users wanted a [MathJax](https://www.mathjax.org/) solution.
 
 MathJax's [CommonHTML output](http://docs.mathjax.org/en/latest/options/output-processors/CommonHTML.html) works great in webbooks, but not in PDFs, EPUBs, MOBIs, ...
 
-Nowadays, Pressbooks uses CommonHTML output in webbooks, SVGs in PDFs, and PNGs in MOBI/EPUBs. 
+Nowadays, Pressbooks uses CommonHTML output in webbooks, SVGs in PDFs, and PNGs in MOBI/EPUBs.
 
 The SVGs and PNGs are generated as follows:
 
@@ -53,7 +53,7 @@ Mix and match `fg=<RRGGBB>`, `font=<string>` and `dpi=<number>` as needed.
 + Font: `http://localhost:3000/latex?latex=<LaTeX>&font=Gyre-Pagella&svg=1`
 
 Ie. same as PNG above with `svg=1` added. Because SVGs are vector images, DPI is not used.
- 
+
 ## AsciiMath and MathML
 
 Same as LaTeX above but instead of `latex?latex=<LaTeX>` do:
@@ -69,7 +69,7 @@ Install Node.js 10.x LTS, Then:
     cd pb-mathjax
     npm install
     npm start
-    
+
 Finally, go to: `http://localhost:3000/`
 
 ## Deploy to a Production Server
@@ -90,11 +90,20 @@ More info: http://pm2.keymetrics.io/docs/usage/quick-start/
 Install [Claudia.js](https://claudiajs.com/), then:
 
     cd ~/code/github/pressbooks/pb-mathjax
-    claudia create --handler lambda.handler --deploy-proxy-api --region us-east-1 --timeout 15 --memory 256 --profile yourself
+    claudia create --handler lambda.handler --deploy-proxy-api --region us-east-1 --timeout 15 --memory 256 --profile yourself --use-local-dependencies
 
-Where `us-east-1` is your AWS region and `yourself` corresponds to an identity in your `~/.aws/credentials` file. 
+Where `us-east-1` is your AWS region and `yourself` corresponds to an identity in your `~/.aws/credentials` file.
 
 If everything goes well, the above command will finish after a few moments and print a response with a URL. Use in Pressbooks as the value for `PB_MATHJAX_URL`
 
 More info: https://claudiajs.com/tutorials/installing.html https://github.com/claudiajs/claudia/blob/master/docs/
 
+If you are deploying not for the first time, use
+
+```
+rm -rf node_modules package-lock.json
+npm install --arch=x64 --platform=linux
+claudia update --use-local-dependencies
+```
+
+This will download the dependencies needed for Linux and deploy to AWS Lambda.
