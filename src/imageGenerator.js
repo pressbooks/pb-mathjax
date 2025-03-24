@@ -1,176 +1,192 @@
 'use strict';
 
-const mjAPI = require('mathjax-node');
-const sharp = require('sharp');
-const path = require('path');
-const deepEqual = require('fast-deep-equal');
-const chillout = require('chillout');
+const { mathjax } = require('mathjax-full/js/mathjax.js');
+const { TeX } = require('mathjax-full/js/input/tex.js');
+const { SVG } = require('mathjax-full/js/output/svg.js');
+const { MathML } = require('mathjax-full/js/input/mathml.js');
+const { AsciiMath } = require('mathjax-full/js/input/asciimath.js');
+const { liteAdaptor } = require('mathjax-full/js/adaptors/liteAdaptor.js');
+const { RegisterHTMLHandler } = require('mathjax-full/js/handlers/html.js');
+const { AllPackages } = require('mathjax-full/js/input/tex/AllPackages.js');
+const { decode } = require('html-entities');
+const { log } = require('console');
 
-/**
- * @param configs Configurations supplied by the route
- * @param configs.typeset MathJax-Node typeset options
- * @param {Object} req - Express request object
- * @param {Object} res - Express response object
- * @param {Function} next - Express next middleware function
- */
+const adaptor = liteAdaptor();
+RegisterHTMLHandler(adaptor);
+
+const extraPackages = ['physics'];
+
+// Configure TeX input
+const tex = new TeX({
+  packages: AllPackages.concat(extraPackages),
+  inlineMath: [['$', '$'], ['\\(', '\\)']],
+  displayMath: [['$$', '$$'], ['\\[', '\\]']]
+});
+
+const mathml = new MathML();
+const asciimath = new AsciiMath();
+
+const svg = new SVG({
+  fontCache: 'none',
+  mtextInheritFont: true,
+  mathmlSpacing: false
+});
+
+function handleError(res) {
+  res.set('pb-mathjax-error', 'Formula does not parse');
+  const path = require('path');
+  return res.status(400).sendFile(path.resolve('public/images/formula_does_not_parse.png'));
+}
+
 module.exports.generate = async (configs, req, res, next) => {
+  const query = configs.query || {};
+  
+  let myForeground = query.fg;
+  let dpi = query.dpi;
+  let isSvg = query.svg === true || query.svg === '1' || query.svg === 'true';
 
-  // --------------------------------------------------------------------------
-  // Params
-  // --------------------------------------------------------------------------
+  let inputFormat = tex;
 
-  let myForeground = req.query.fg;
-  let myFont = req.query.font;
-  let dpi = req.query.dpi;
-  let isSvg = req.query.svg;
-
-  // --------------------------------------------------------------------------
-  // Sanitize Params
-  // --------------------------------------------------------------------------
-
-  // Font
-  function inArray(needle, haystack) {
-    let length = haystack.length;
-    for (let i = 0; i < length; i++) {
-      if (haystack[i] === needle) return true;
-    }
-    return false;
+  switch (configs.typeset.format) {
+    case 'TeX':
+      break;
+    case 'MathML':
+        inputFormat = mathml;
+      break;
+    case 'AsciiMath':
+        inputFormat = asciimath;
+      break;
+    default:
+      return handleError(res);
   }
 
-  const possibleFonts = [
-    'TeX',
-    'STIX-Web',
-    'Asana-Math',
-    'Neo-Euler',
-    'Gyre-Pagella',
-    'Gyre-Termes',
-    'Latin-Modern',
-  ];
-  if (!inArray(myFont, possibleFonts)) {
-    myFont = possibleFonts[0];
-  }
+  const mathJaxDocument = mathjax.document('', {
+    InputJax: inputFormat,
+    OutputJax: svg
+  });
 
-  // Font Color
   function isValidColor(str) {
-    return str.match(/^#[a-f0-9]{6}$/i) !== null;
+    return /^#[a-f0-9]{6}$/i.test(`#${str}`);
   }
 
-  myForeground = isValidColor(`#${myForeground}`)
-      ? `#${myForeground}`
-      : '#000000';
+  function stripRequireCommands(math) {
+    return math.replace(/\\require\s*\{[^}]*\}\s*/g, '');
+  }
 
-  // Dpi
+  myForeground = isValidColor(myForeground) ? `#${myForeground}` : '#000000';
+
   dpi = parseInt(dpi);
   if (isNaN(dpi)) dpi = 75;
-  if (dpi < 75) dpi = 75; // Min
-  if (dpi > 2400) dpi = 2400; // Max
-
-  // Check to see if SVG
-  isSvg = !(!isSvg || isSvg === '0');
-
-  // Setup CSS for SVG
-  const svgCss = `color: ${myForeground};`;
-
-  // --------------------------------------------------------------------------
-  // One MathJax Config To Rule Them All (performance/crashing fix)
-  // --------------------------------------------------------------------------
-
-  const mathJaxConfig = {
-    paths: {
-      'mypatches': path.dirname(path.resolve('src/myPatches')),
-    },
-    extensions: '[mypatches]/myPatches.js',
-    displayMessages: false,
-    displayErrors: false,
-    MathJax: {
-      extensions: ['Safe.js'],
-      TeX: {
-        // @see http://docs.mathjax.org/en/latest/tex.html
-        extensions: ['autoload-all.js'],
-      },
-      AsciiMath: {
-        // @see http://docs.mathjax.org/en/latest/asciimath.html
-      },
-      MathML: {
-        // @see http://docs.mathjax.org/en/latest/mathml.html
-        extensions: ['content-mathml.js'],
-      },
-      SVG: {
-        blacker: 0,
-        font: myFont,
-      },
-    },
-  };
-
-  // --------------------------------------------------------------------------
-  // Convert math into an image
-  // --------------------------------------------------------------------------
-
-  // Error image
-  function formulaDoesNotParse(err) {
-    console.error(err);
-    console.debug('Sending back: formula_does_not_parse.png');
-    res.set('pb-mathjax-error', 'Formula does not parse');
-    return res.sendFile(
-        path.resolve('public/images/formula_does_not_parse.png'));
-  }
-
-  // Consider an init longer than 7 seconds a crash and exit
-  const tooLong = setTimeout(() => {
-    // @see https://github.com/mathjax/MathJax-node/issues/441
-    console.error('Too long, Something crashed? Please restart the server.');
-    process.exit(1);
-  }, 7000);
+  if (dpi < 75) dpi = 75;
+  if (dpi > 2400) dpi = 2400;
 
   try {
-    // Stop race condition. Multiple calls to mjAPI.start(), at the same time, crashes MathJax in unexpected ways
-    if (req.app.locals.globalMathJaxIsRestarting) {
-      const restartTime = Date.now();
-      await chillout.waitUntil(() => {
-        if (req.app.locals.globalMathJaxIsRestarting === false || (Date.now() - restartTime) > 10000) {
-          return chillout.StopIteration; // break loop
-        }
+    if (!configs?.typeset?.math) {
+      return handleError(res);
+    }
+    
+    let decodedMath = configs.typeset.math;
+
+    try {
+      decodedMath = decodeURIComponent(decodedMath);
+      decodedMath = decodedMath.replace(/&#038;/g, '&').replace(/&#38;/g, '&');
+      decodedMath = decode(decodedMath);
+    } catch (decodeError) {
+      return handleError(res);
+    }
+
+    const math = stripRequireCommands(decodedMath);
+    const isInline = (math.startsWith('\\(') && math.endsWith('\\)')) ||
+        (math.startsWith('$') && math.endsWith('$') && !math.startsWith('$$'));
+    const isBlock = (math.startsWith('\\[') && math.endsWith('\\]')) ||
+        (math.startsWith('$$') && math.endsWith('$$'));
+
+    let cleanMath = math.trim();
+    if (isInline) {
+      cleanMath = math.slice(math.startsWith('\\(') ? 2 : 1, -2);
+    } else if (isBlock) {
+      cleanMath = math.slice(2, -2);
+    }
+
+    try {
+      const node = mathJaxDocument.convert(cleanMath, {
+        display: !isInline,
+        em: 16,
+        ex: 8,
+        containerWidth: 1000,
+        lineWidth: 1000,
+        scale: 1
       });
-    }
-    req.app.locals.globalMathJaxIsRestarting = true;
 
-    // Configure
-    mjAPI.config(mathJaxConfig);
-    if (req.app.locals.globalMathJaxConfig === null) {
-      // Start is done automatically when typeset is first called
-      req.app.locals.globalMathJaxConfig = JSON.parse(JSON.stringify(mathJaxConfig)); // Clone without reference
-    } else if (!deepEqual(mathJaxConfig, req.app.locals.globalMathJaxConfig)) {
-      // Start
-      console.debug('MathJax configuration has changed, restart mathjax-node');
-      req.app.locals.globalMathJaxConfig = JSON.parse(JSON.stringify(mathJaxConfig)); // Clone without reference
-      mjAPI.start();
-    }
 
-    // Typeset
-    let data = await mjAPI.typeset(configs.typeset);
-    req.app.locals.globalMathJaxIsRestarting = false;
-    clearTimeout(tooLong);
-    if (data.width === '0') {
-      return formulaDoesNotParse('Width equals 0, broken SVG');
-    }
-    // Inject CSS
-    let svg = data.svg;
-    svg = svg.replace(/<title/,
-        `<style>/* <![CDATA[ */ svg { ${svgCss} } /* ]]> */</style><title`);
-    if (isSvg) {
-      // SVG
-      res.set('Content-Type', 'image/svg+xml');
-      return res.send(svg);
-    } else {
-      // PNG
-      let png = await sharp(Buffer.from(svg), {density: dpi}).png().toBuffer();
-      res.set('Content-Type', 'image/png');
-      return res.send(png);
+      let svgContent = adaptor.innerHTML(node);
+
+
+      if (!svgContent || !svgContent.includes('<svg') || !svgContent.includes('</svg>')) {
+        return handleError(res);
+      }
+
+      svgContent = svgContent.replace(
+          /<svg([^>]*)style="([^"]*)"/,
+          `<svg$1style="color: ${myForeground}; $2"`
+      );
+
+      if (svgContent.includes('merror')) {
+        return handleError(res);
+      }
+
+      if (isSvg) {
+        res.set('Content-Type', 'image/svg+xml');
+        return res.send(svgContent);
+      } else {
+        try {
+          if (!svgContent.trim().startsWith('<svg')) {
+            return handleError(res);
+          }
+
+          // Set Content-Type header early
+          res.set('Content-Type', 'image/png');
+
+          let fullSvgContent = svgContent;
+          
+          if (!fullSvgContent.includes('xmlns="http://www.w3.org/2000/svg"')) {
+            fullSvgContent = fullSvgContent.replace('<svg', '<svg xmlns="http://www.w3.org/2000/svg"');
+          }
+          
+          if (!fullSvgContent.startsWith('<?xml')) {
+            fullSvgContent = '<?xml version="1.0" standalone="no"?>\n' + fullSvgContent;
+          }
+
+
+          const sharp = require('sharp');
+          const buffer = Buffer.from(fullSvgContent);
+          const image = sharp(buffer, {
+            density: dpi > 300 ? 300 : dpi,
+            limitInputPixels: 5000 * 5000
+          });
+
+          const png = await image
+            .resize(500, 500, {
+              fit: 'inside',
+              withoutEnlargement: true,
+              background: { r: 255, g: 255, b: 255, alpha: 0 }
+            })
+            .png({
+              compressionLevel: 6,
+              adaptiveFiltering: false,
+              force: true
+            })
+            .toBuffer();
+
+          return res.send(png);
+        } catch (pngError) {
+          return handleError(res);
+        }
+      }
+    } catch (err) {
+      return handleError(res);
     }
   } catch (err) {
-    req.app.locals.globalMathJaxIsRestarting = false;
-    clearTimeout(tooLong);
-    return formulaDoesNotParse(err);
+    return handleError(res);
   }
-
 };
