@@ -94,7 +94,6 @@ module.exports.generate = async (configs, req, res, next) => {
     }
 
     const math = stripRequireCommands(decodedMath);
-    log('Decoded Math:', decodedMath);
     const isInline = (math.startsWith('\\(') && math.endsWith('\\)')) ||
         (math.startsWith('$') && math.endsWith('$') && !math.startsWith('$$'));
     const isBlock = (math.startsWith('\\[') && math.endsWith('\\]')) ||
