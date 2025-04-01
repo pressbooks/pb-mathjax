@@ -85,8 +85,6 @@ module.exports.generate = async (configs, req, res, next) => {
     
     let decodedMath = configs.typeset.math;
 
-    console.log('Decoded Math:', decodedMath);
-
     try {
       decodedMath = decodeURIComponent(decodedMath);
       decodedMath = decodedMath.replace(/&#038;/g, '&').replace(/&#38;/g, '&');
