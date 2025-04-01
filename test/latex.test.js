@@ -136,12 +136,29 @@ describe('Testing the /latex route', function() {
                 });
         });
 
-        // ✅ Require Package
-        it('Should strip require command and return parsed formula', function() {
+        it('Should load physics package for base64 encoded formula when required', function() {
+            // Base64 encoded: \require{physics} \divergence \vec{E} = \frac{\rho}{\epsilon_0}
             return request(app)
-                .get('/latex?latex=XFxyZXF1aXJle3BoeXNpY3N9IFwoIFxcZHZ7Zn17eH0sIFxccGR2e2Z9e3h9LCBcXGV4cHZhbHtBfSwgXFxrZXR7XFxwcml9IFwp&isBase64=1&svg=1')
+                .get('/latex?latex=XHJlcXVpcmV7cGh5c2ljc30gXGRpdmVyZ2VuY2UgXHZlY3tFfSA9IFxmcmFjeyRccmhvfXskXGVwc2lsb25fMH0=&svg=1&isBase64=1')
                 .then(function(response) {
                     expect(response.type).to.contain('image/svg+xml');
+                    const svgContent = response.body.toString('utf-8');
+                    expect(svgContent).to.include('svg');
+                    
+                    // Extract width from SVG
+                    const widthMatch = svgContent.match(/width="([0-9.]+)([a-zA-Z]+)"/);
+                    expect(widthMatch).to.not.be.null;
+                    const width = parseFloat(widthMatch[1]);
+                    const unit = widthMatch[2];
+                    
+                    // Convert to ex if needed
+                    let widthInEx = width;
+                    if (unit === 'px') {
+                        widthInEx = width / 8; // Approximate conversion from px to ex
+                    }
+                    
+                    // Width should be less than 30ex (indicating proper symbol rendering)
+                    expect(widthInEx).to.be.lessThan(30);
                 });
         });
 
