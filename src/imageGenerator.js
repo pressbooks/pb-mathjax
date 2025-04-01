@@ -14,15 +14,6 @@ const { log } = require('console');
 const adaptor = liteAdaptor();
 RegisterHTMLHandler(adaptor);
 
-const extraPackages = ['physics'];
-
-// Configure TeX input
-const tex = new TeX({
-  packages: AllPackages.concat(extraPackages),
-  inlineMath: [['$', '$'], ['\\(', '\\)']],
-  displayMath: [['$$', '$$'], ['\\[', '\\]']]
-});
-
 const mathml = new MathML();
 const asciimath = new AsciiMath();
 
@@ -44,6 +35,13 @@ module.exports.generate = async (configs, req, res, next) => {
   let myForeground = query.fg;
   let dpi = query.dpi;
   let isSvg = query.svg === true || query.svg === '1' || query.svg === 'true';
+
+    // Configure TeX input
+  let tex = new TeX({
+    packages: configs.typeset.math.includes('\\require{physics}') ? AllPackages.concat(['physics']) : AllPackages,
+    inlineMath: [['$', '$'], ['\\(', '\\)']],
+    displayMath: [['$$', '$$'], ['\\[', '\\]']]
+  });
 
   let inputFormat = tex;
 
