@@ -9,7 +9,6 @@ const { liteAdaptor } = require('mathjax-full/js/adaptors/liteAdaptor.js');
 const { RegisterHTMLHandler } = require('mathjax-full/js/handlers/html.js');
 const { AllPackages } = require('mathjax-full/js/input/tex/AllPackages.js');
 const { decode } = require('html-entities');
-const { log } = require('console');
 
 const adaptor = liteAdaptor();
 RegisterHTMLHandler(adaptor);
@@ -86,7 +85,11 @@ module.exports.generate = async (configs, req, res, next) => {
     let decodedMath = configs.typeset.math;
 
     try {
+      // Temporarily encode LaTeX percent signs to avoid issues with decodeURIComponent
+      decodedMath = decodedMath.replace(/\\\%/g, '__PERCENT__');
       decodedMath = decodeURIComponent(decodedMath);
+      // Restore LaTeX percent signs
+      decodedMath = decodedMath.replace(/__PERCENT__/g, '\\%');
       decodedMath = decodedMath.replace(/&#038;/g, '&').replace(/&#38;/g, '&');
       decodedMath = decode(decodedMath);
     } catch (decodeError) {
