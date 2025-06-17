@@ -86,11 +86,17 @@ module.exports.generate = async (configs, req, res, next) => {
 
     try {
       // Temporarily encode LaTeX percent signs to avoid issues with decodeURIComponent
-      decodedMath = decodedMath.replace(/\\\%/g, '__PERCENT__');
+       decodedMath = decodedMath.replace(/\\\%/g, "__PERCENT__");
+      // Handle MathML
+      decodedMath = decodedMath.replace(
+        /<(m[a-z]+)>%<\/\1>/g,
+        "<$1>__MATHPERCENT__</$1>",
+      );
       decodedMath = decodeURIComponent(decodedMath);
-      // Restore LaTeX percent signs
-      decodedMath = decodedMath.replace(/__PERCENT__/g, '\\%');
-      decodedMath = decodedMath.replace(/&#038;/g, '&').replace(/&#38;/g, '&');
+      // Restore LaTeX and MathML percent signs
+      decodedMath = decodedMath.replace(/__PERCENT__/g, "\\%");
+      decodedMath = decodedMath.replace(/__MATHPERCENT__/g, "%");
+      decodedMath = decodedMath.replace(/&#038;/g, "&").replace(/&#38;/g, "&");
       decodedMath = decode(decodedMath);
     } catch (decodeError) {
       return handleError(res);
