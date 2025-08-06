@@ -86,7 +86,7 @@ module.exports.generate = async (configs, req, res, next) => {
 
     try {
       // Temporarily encode LaTeX percent signs to avoid issues with decodeURIComponent
-      decodedMath = decodedMath.replace(/\\\?%/g, "__PERCENT__");
+      decodedMath = decodedMath.replace(/\\\%/g, "__PERCENT__");
       // Handle MathML percent signs within tags
       decodedMath = decodedMath.replace(/(<[^>]*>)([^<]*?)(<\/[^>]*>)/g, (match, openTag, content, closeTag) => {
         if (content.includes('%')) {
