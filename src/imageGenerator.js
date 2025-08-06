@@ -86,12 +86,16 @@ module.exports.generate = async (configs, req, res, next) => {
 
     try {
       // Temporarily encode LaTeX percent signs to avoid issues with decodeURIComponent
-       decodedMath = decodedMath.replace(/\\\%/g, "__PERCENT__");
-      // Handle MathML
-      decodedMath = decodedMath.replace(
-        /<(m[a-z]+)>%<\/\1>/g,
-        "<$1>__MATHPERCENT__</$1>",
-      );
+      decodedMath = decodedMath.replace(/\\\?%/g, "__PERCENT__");
+      // Handle MathML percent signs within tags
+      decodedMath = decodedMath.replace(/(<[^>]*>)([^<]*?)(<\/[^>]*>)/g, (match, openTag, content, closeTag) => {
+        if (content.includes('%')) {
+          const newContent = content.replace(/\\?%/g, '__MATHPERCENT__');
+          return openTag + newContent + closeTag;
+          }
+          return match;
+        });
+      
       decodedMath = decodeURIComponent(decodedMath);
       // Restore LaTeX and MathML percent signs
       decodedMath = decodedMath.replace(/__PERCENT__/g, "\\%");
@@ -125,9 +129,7 @@ module.exports.generate = async (configs, req, res, next) => {
         scale: 1
       });
 
-
       let svgContent = adaptor.innerHTML(node);
-
 
       if (!svgContent || !svgContent.includes('<svg') || !svgContent.includes('</svg>')) {
         return handleError(res);
