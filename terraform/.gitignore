@@ -1,0 +1,24 @@
+# Local terraform directories
+.terraform/
+.terraform.tfstate
+
+# Terraform state files
+*.tfstate
+*.tfstate.*
+
+# Crash logs
+crash.log
+crash.*.log
+
+# Plan files
+*.tfplan
+
+# Override files (local-only customizations)
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Sensitive local config
+.terraformrc
+terraform.rc
