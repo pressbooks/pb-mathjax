@@ -178,3 +178,9 @@ claudia update --use-local-dependencies
 ```
 
 This will download the dependencies needed for Linux and deploy to AWS Lambda.
+
+
+### Automated Deploy Pipeline
+This service is deployed automatically through AWS CodePipeline. Updates to the development, staging, or production branches trigger the pipeline to fetch the latest code, build and test it, and deploy the resulting ZIP package to the Lambda function. Deployment start and completion notifications are sent to the Slack bots channel.
+
+For more details, see the Terraform directory.
