@@ -158,29 +158,36 @@ More info: http://pm2.keymetrics.io/docs/usage/quick-start/
 
 ## Deploy to AWS Lambda
 
-Install [Claudia.js](https://claudiajs.com/), then:
-
-    cd ~/code/github/pressbooks/pb-mathjax
-    claudia create --handler lambda.handler --deploy-proxy-api --region us-east-1 --timeout 15 --memory 256 --profile yourself --use-local-dependencies
-
-Where `us-east-1` is your AWS region and `yourself` corresponds to an identity in your `~/.aws/credentials` file.
-
-If everything goes well, the above command will finish after a few moments and print a response with a URL. Use in Pressbooks as the value for `PB_MATHJAX_URL`
-
-More info: https://claudiajs.com/tutorials/installing.html https://github.com/claudiajs/claudia/blob/master/docs/
-
-If you are deploying not for the first time, use
-
-```
-rm -rf node_modules package-lock.json
-npm install --arch=x64 --platform=linux
-claudia update --use-local-dependencies
-```
-
-This will download the dependencies needed for Linux and deploy to AWS Lambda.
-
-
 ### Automated Deploy Pipeline
 This service is deployed automatically through AWS CodePipeline. Updates to the development, staging, or production branches trigger the pipeline to fetch the latest code, build and test it, and deploy the resulting ZIP package to the Lambda function. Deployment start and completion notifications are sent to the Slack bots channel.
 
 For more details, see the Terraform directory.
+
+### Releases and Versioning
+
+This repository uses [Release Please](https://github.com/googleapis/release-please) to automate versioning and changelog generation.
+
+**How it works:**
+
+1. Write commits to the `production` branch using [Conventional Commits](https://www.conventionalcommits.org/) format:
+   - `feat: add new endpoint` - triggers a minor version bump
+   - `fix: resolve svg rendering issue` - triggers a patch version bump
+   - `feat!: change API response format` or `BREAKING CHANGE:` in body - triggers a major version bump
+
+2. Release Please automatically creates/updates a Release PR that includes:
+   - Version bump in `package.json`
+   - Auto-generated `CHANGELOG.md` entries
+
+3. When you merge the Release PR:
+   - A GitHub Release is created with a version tag (e.g., `v1.2.0`)
+   - The merge triggers AWS CodePipeline to deploy to Lambda
+
+**Example commit messages:**
+
+```
+feat: add support for custom fonts
+fix: handle edge case in base64 decoding
+docs: update API documentation
+chore: update dependencies
+feat!: remove deprecated latex endpoint
+```
