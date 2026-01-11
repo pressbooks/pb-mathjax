@@ -165,7 +165,7 @@ For more details, see the Terraform directory.
 
 ### Releases and Versioning
 
-This repository uses [Release Please](https://github.com/googleapis/release-please) to automate versioning and changelog generation.
+This repository uses [Release Please](https://github.com/googleapis/release-please) to automate versioning and changelog generation. See the [CHANGELOG](CHANGELOG.md) for a history of changes.
 
 **How it works:**
 
