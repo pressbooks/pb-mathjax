@@ -129,9 +129,7 @@ module.exports.generate = async (configs, req, res, next) => {
         scale: 1
       });
 
-
       let svgContent = adaptor.innerHTML(node);
-
 
       if (!svgContent || !svgContent.includes('<svg') || !svgContent.includes('</svg>')) {
         return handleError(res);
