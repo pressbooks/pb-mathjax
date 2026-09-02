@@ -134,7 +134,7 @@ You can now customize the rendering with these additional parameters:
 
 # Installation
 
-Install Node.js 18.x LTS, Then:
+Install Node.js 24, Then:
 
     git clone git@github.com:pressbooks/pb-mathjax.git
     cd pb-mathjax
