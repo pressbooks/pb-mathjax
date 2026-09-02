@@ -153,7 +153,7 @@ resource "aws_codebuild_project" "lambda_build" {
       phases:
         install:
           runtime-versions:
-            nodejs: 18
+            nodejs: 24
           commands:
             - echo "Installing dependencies..."
             - npm ci || npm install
