@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 This changelog is automatically updated by [Release Please](https://github.com/googleapis/release-please).
 
+## [1.0.1](https://github.com/pressbooks/pb-mathjax/compare/pb-mathjax-v1.0.0...pb-mathjax-v1.0.1) (2026-10-30)
+
+
+### Bug Fixes
+
+* update async handler compatible with Node.js 24. ([#155](https://github.com/pressbooks/pb-mathjax/issues/155)) ([f027774](https://github.com/pressbooks/pb-mathjax/commit/f027774d5a43713e453fbf0dd5422cbb0e7222ae))
+* use promise-based serverless-express handler ([#150](https://github.com/pressbooks/pb-mathjax/issues/150)) ([b3b689e](https://github.com/pressbooks/pb-mathjax/commit/b3b689e6f3242ff46e69017a9b38cb0a0e0b9da1))
+
 ## 1.0.0 (2026-01-15)
 
 
